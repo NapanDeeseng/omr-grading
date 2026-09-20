@@ -1,0 +1,113 @@
+/* กล่องซูมข้อที่เลือก (dashboard.zoom_panel) */
+.zoom-q {display: inline-block; font-weight: 700; font-size: 1rem; color: #1d4ed8; background: #e8effd;
+  padding: 2px 12px; border-radius: 999px; margin-bottom: 6px;}
+.bubbles {display: flex; gap: 10px; margin: 10px 0 10px;}
+.bubble {width: 36px; height: 36px; border-radius: 50%; border: 2px solid #b6c3d6; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; color: #52627a; background: #fff;}
+.bubble.on {background: #0f1f3d; border-color: #0f1f3d; color: #fff;}
+.bubble.key {box-shadow: 0 0 0 3px #86d1a3;}
+.conf {font-size: .98rem; color: #33445f; margin-top: 2px;}
+.badge-row {margin-top: 10px;}
+
+/* ======================================================================
+   Hero banner (dashboard.hero) — น้ำเงินกรมท่าเข้ม + ทองเป็นสีเน้น ให้ความรู้สึกสถาบันการศึกษา
+   ====================================================================== */
+.st-key-hero {position: relative; overflow: hidden; border-radius: 22px; padding: 38px 40px 34px;
+  color: #fff; margin-bottom: 6px;
+  background:
+    radial-gradient(900px 420px at 88% -10%, rgba(96,165,250,.35), transparent 60%),
+    radial-gradient(600px 380px at -5% 120%, rgba(245,196,81,.16), transparent 60%),
+    linear-gradient(135deg, #0a1733 0%, #13306e 55%, #1d4ed8 100%);
+  box-shadow: 0 24px 48px -28px rgba(10,23,51,.75);}
+/* ลายจุดจาง ๆ และวงแหวนตกแต่ง */
+.st-key-hero::before {content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .35;
+  background-image: radial-gradient(rgba(255,255,255,.22) 1px, transparent 1.2px); background-size: 22px 22px;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 45%, #000 100%);}
+.st-key-hero::after {content: ""; position: absolute; width: 420px; height: 420px; right: -120px; top: -160px;
+  border-radius: 50%; border: 1px solid rgba(255,255,255,.12); pointer-events: none;
+  box-shadow: 0 0 0 60px rgba(255,255,255,.025), 0 0 0 120px rgba(255,255,255,.02);
+  animation: hero-spin 40s linear infinite;}
+.st-key-hero > * {position: relative; z-index: 1;}
+
+.hero-eyebrow {display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 10px;
+  border-radius: 999px; font-size: .85rem; font-weight: 600; letter-spacing: .02em; color: #fde7a7;
+  background: rgba(245,196,81,.12); border: 1px solid rgba(245,196,81,.35);
+  animation: hero-in .6s .05s cubic-bezier(.2,.7,.2,1) both;}
+.hero-eyebrow .msym {font-size: 18px; color: #f5c451;}
+.hero-title {font-size: clamp(1.9rem, 3.2vw, 2.9rem); font-weight: 700; line-height: 1.22; margin: 18px 0 12px;
+  color: #fff; letter-spacing: -.01em; animation: hero-in .7s .12s cubic-bezier(.2,.7,.2,1) both;}
+.hero-title .accent {background: linear-gradient(90deg, #fde7a7, #f5c451 45%, #fff3cf);
+  -webkit-background-clip: text; background-clip: text; color: transparent;}
+.hero-sub {font-size: 1.05rem; line-height: 1.7; color: rgba(232,238,251,.88); max-width: 34rem; margin: 0 0 18px;
+  animation: hero-in .7s .2s cubic-bezier(.2,.7,.2,1) both;}
+.hero-pills {display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;
+  animation: hero-in .7s .28s cubic-bezier(.2,.7,.2,1) both;}
+.hero-pills .pill {display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 10px;
+  font-size: .88rem; color: #e8eefb; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(6px);}
+.hero-pills .pill .msym {font-size: 18px; color: #93c5fd;}
+
+/* ปุ่มใน hero: ปุ่มหลักสีขาว ปุ่มรองแบบขอบใส */
+.st-key-hero_cta {animation: hero-in .7s .36s cubic-bezier(.2,.7,.2,1) both; padding-top: 10px;}
+.st-key-hero_cta button {border-radius: 12px; padding: 10px 18px; font-weight: 600; min-height: 46px;}
+.st-key-hero_cta button[kind="primary"] {background: #fff; color: #0f2a63; border: 1px solid #fff;}
+.st-key-hero_cta button[kind="primary"]:hover {background: #fdf6e0; color: #0f2a63; border-color: #f5c451;
+  box-shadow: 0 10px 24px -10px rgba(245,196,81,.7);}
+.st-key-hero_cta button[kind="secondary"] {background: rgba(255,255,255,.06); color: #fff;
+  border: 1px solid rgba(255,255,255,.35);}
+.st-key-hero_cta button[kind="secondary"]:hover {background: rgba(255,255,255,.14); color: #fff;
+  border-color: rgba(255,255,255,.6);}
+.st-key-hero_cta button p, .st-key-hero_cta button span {color: inherit;}
+
+/* ภาพประกอบ: กระดาษคำตอบเคลื่อนไหว */
+.hero-art {position: relative; max-width: 420px; margin: 0 auto; animation: hero-art-in .9s .15s cubic-bezier(.2,.7,.2,1) both;}
+.hero-art .sheet {width: 100%; height: auto; display: block; filter: drop-shadow(0 26px 30px rgba(3,10,30,.45));
+  animation: hero-float 6s ease-in-out infinite;}
+.hero-art .paper {fill: #fff;}
+.hero-art .mark {fill: #0f1f3d;}
+.hero-art .line {fill: #c9d5ea;}
+.hero-art .line.soft {fill: #e3eaf5;}
+.hero-art .qn {font: 600 11px 'IBM Plex Sans Thai', sans-serif; fill: #8a99b0; text-anchor: middle;}
+.hero-art .ring {fill: none; stroke: #c3cfe3; stroke-width: 1.6;}
+.hero-art .ring.warn {stroke: #f5b544; stroke-width: 2; animation: hero-pulse 1.8s 2.4s ease-in-out infinite;
+  transform-box: fill-box; transform-origin: center;}
+.hero-art .dot {fill: #16307a; transform-box: fill-box; transform-origin: center;
+  animation: hero-fill .45s cubic-bezier(.2,.8,.2,1.35) both;}
+.hero-art .dot.warn {fill: #d97706;}
+.hero-art .scan {animation: hero-scan 3.2s 2.2s ease-in-out infinite; opacity: 0;}
+
+/* การ์ดผลที่ลอยรอบกระดาษ */
+.float-card {position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-radius: 14px; background: rgba(255,255,255,.96); color: #0f1f3d; font-size: .88rem;
+  box-shadow: 0 18px 30px -16px rgba(3,10,30,.6); white-space: nowrap;}
+.float-card small {display: block; font-size: .72rem; color: #52627a; line-height: 1.2;}
+.float-card b {font-weight: 700; font-variant-numeric: tabular-nums;}
+.float-card .msym {font-size: 22px; width: 36px; height: 36px; border-radius: 10px; display: flex;
+  align-items: center; justify-content: center;}
+.fc-score {top: 10%; right: -2%; animation: hero-card-in .6s 1.9s cubic-bezier(.2,.7,.2,1) both, hero-float 5s 2.5s ease-in-out infinite;}
+.fc-score .msym {background: #fdf3d7; color: #b7791f;}
+.fc-check {top: 46%; left: -4%; animation: hero-card-in .6s 2.3s cubic-bezier(.2,.7,.2,1) both, hero-float 5.5s 3s ease-in-out infinite;}
+.fc-check .msym {background: #fdf0dc; color: #b45309;}
+.fc-excel {bottom: 6%; right: 4%; animation: hero-card-in .6s 2.7s cubic-bezier(.2,.7,.2,1) both, hero-float 6s 3.4s ease-in-out infinite;}
+.fc-excel .msym {background: #e7f6ec; color: #15803d;}
+
+@keyframes hero-in {from {opacity: 0; transform: translateY(14px);} to {opacity: 1; transform: none;}}
+@keyframes hero-art-in {from {opacity: 0; transform: translateY(24px) scale(.96);} to {opacity: 1; transform: none;}}
+@keyframes hero-card-in {from {opacity: 0; transform: translateY(10px) scale(.9);} to {opacity: 1; transform: none;}}
+@keyframes hero-float {0%, 100% {transform: translateY(0);} 50% {transform: translateY(-8px);}}
+@keyframes hero-fill {from {opacity: 0; transform: scale(0);} to {opacity: 1; transform: scale(1);}}
+@keyframes hero-pulse {0%, 100% {transform: scale(1); opacity: 1;} 50% {transform: scale(1.25); opacity: .55;}}
+@keyframes hero-scan {0% {transform: translateY(40px); opacity: 0;} 15% {opacity: 1;} 85% {opacity: 1;}
+  100% {transform: translateY(270px); opacity: 0;}}
+@keyframes hero-spin {to {transform: rotate(360deg);}}
+
+/* จอแคบ: ลดระยะขอบ ซ่อนการ์ดลอยบางใบไม่ให้ล้น */
+@media (max-width: 900px) {
+  .st-key-hero {padding: 26px 22px 24px; border-radius: 18px;}
+  .fc-check {left: 0;}
+  .fc-score {right: 0;}
+}
+@media (max-width: 640px) {
+  .hero-art {max-width: 300px;}
+  .fc-excel {display: none;}
+}

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# ไฟล์ที่สร้างใหม่ได้ด้วยคำสั่งใน DEVELOPER.md
+# python tools/train_yolo.py --generate-only
+datasets/
+# log การเทรน YOLO
+runs/
+# โหมด debug
+debug/
+# ผลการตรวจที่บันทึก (ข้อมูลนักเรียน — ไม่ควรขึ้น git)
+results/
+# python tools/evaluate.py (เก็บเฉพาะประวัติเวอร์ชัน)
+reports/*
+!reports/history.csv
+# python tools/synth.py
+samples/synthetic/
+
+# เก็บ models/omr_problems_yolov8n.pt ไว้ (6 MB, เทรนนาน) แต่ไม่เก็บโมเดลตั้งต้นที่ดาวน์โหลดได้
+models/yolov8n.pt

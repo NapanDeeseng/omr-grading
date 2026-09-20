@@ -1,0 +1,42 @@
+[theme]
+base = "light"
+# น้ำเงินหลักเข้มพอให้ตัวอักษรสีขาวบนปุ่มอ่านง่าย (contrast ≥ 4.5:1)
+primaryColor = "#1d4ed8"
+backgroundColor = "#f5f8fd"
+secondaryBackgroundColor = "#eaf0fa"
+textColor = "#0f1f3d"
+borderColor = "#d6e0ef"
+linkColor = "#1d4ed8"
+linkUnderline = false
+showWidgetBorder = true
+showSidebarBorder = true
+
+# IBM Plex Sans Thai: ฟอนต์สำหรับเอกสาร/ระบบงาน อ่านตัวเลขและภาษาไทยได้ชัด เหมาะกับตารางคะแนน
+font = "'IBM Plex Sans Thai':https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
+headingFont = "'IBM Plex Sans Thai':https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@600;700&display=swap"
+codeFont = "'IBM Plex Mono':https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+baseFontSize = 16
+headingFontSizes = ["30px", "24px", "20px", "17px", "15px", "14px"]
+headingFontWeights = [700, 700, 600, 600, 600, 600]
+baseRadius = "10px"
+buttonRadius = "8px"
+
+dataframeBorderColor = "#dde5f1"
+dataframeHeaderBackgroundColor = "#eef3fb"
+
+blueColor = "#1d4ed8"
+greenColor = "#15803d"
+redColor = "#b91c1c"
+orangeColor = "#b45309"
+yellowColor = "#a16207"
+chartCategoricalColors = ["#1d4ed8", "#60a5fa", "#0f766e", "#b45309", "#64748b"]
+
+[theme.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f1f5fc"
+textColor = "#0f1f3d"
+borderColor = "#e3e9f4"
+primaryColor = "#1d4ed8"
+
+[client]
+toolbarMode = "minimal"

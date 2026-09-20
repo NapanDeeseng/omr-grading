@@ -1,0 +1,26 @@
+/* เมนู sidebar (st.page_link) — สีพื้นอยู่ใน .streamlit/config.toml [theme.sidebar] */
+.st-key-side_menu {gap: 2px;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"] {padding: 10px 14px; border-radius: 10px;
+  transition: background .15s; background: transparent;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"]:hover {background: #f1f5fc;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"] p {font-size: 1rem; color: #33445f;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"] span[data-testid="stIconMaterial"] {color: #7a8aa3;}
+/* หน้าที่เปิดอยู่: sidebar.render ครอบด้วย st.container(key="side_active") */
+.st-key-side_active a[data-testid="stPageLink-NavLink"],
+.st-key-side_active a[data-testid="stPageLink-NavLink"]:hover {background: #e8effd;
+  box-shadow: inset 3px 0 0 #1d4ed8;}
+.st-key-side_active a[data-testid="stPageLink-NavLink"] p {color: #1d4ed8; font-weight: 600;}
+.st-key-side_active a[data-testid="stPageLink-NavLink"] span[data-testid="stIconMaterial"] {color: #1d4ed8;}
+
+/* โลโก้และชื่อระบบ */
+.side-brand {display: flex; align-items: center; gap: 12px; padding: 2px 4px 18px;}
+.side-brand .logo {width: 44px; height: 44px; border-radius: 12px; background: #1d4ed8; color: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
+.side-brand .name {font-size: 1.15rem; font-weight: 700; color: #0f1f3d; line-height: 1.2;}
+.side-brand .name small {display: block; font-size: .8rem; font-weight: 400; color: #52627a; margin-top: 2px;}
+.side-label {font-size: .75rem; font-weight: 600; letter-spacing: .06em; color: #8a99b0; padding: 0 6px 6px;}
+
+/* สรุปสถานะด้านล่างเมนู */
+.side-stat {display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+  border-radius: 10px; background: #f5f8fd; margin-bottom: 6px; font-size: .9rem; color: #33445f;}
+.side-stat b {color: #1d4ed8; font-variant-numeric: tabular-nums;}
