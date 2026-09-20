@@ -11,6 +11,7 @@ from components.shared.state import load_example_key, run_grading
 from omr import config as C
 from omr.errors import AnswerKeyError
 from omr.grader import AnswerKey, answer_key_to_csv, parse_answer_key
+from omr.pipeline import heic_supported
 
 
 def render() -> None:
@@ -20,7 +21,9 @@ def render() -> None:
         key_editor()
     with right, st.container(key="card_upload"):
         W.card_title("ขั้นที่ 2 · อัปโหลดภาพกระดาษคำตอบ", "add_photo_alternate")
-        files = st.file_uploader("เลือกภาพ (JPG / PNG) ได้หลายไฟล์", type=["jpg", "jpeg", "png"],
+        # HEIC จาก iPhone เปิดได้เมื่อติดตั้ง pillow-heif เท่านั้น จึงไม่โชว์ถ้าเครื่องนี้ยังไม่มี
+        types = ["jpg", "jpeg", "png"] + (["heic", "heif"] if heic_supported() else [])
+        files = st.file_uploader(f"เลือกภาพ ({' / '.join(t.upper() for t in types)}) ได้หลายไฟล์", type=types,
                                  accept_multiple_files=True)
         has_key = bool(st.session_state.answer_key)
         if not has_key:

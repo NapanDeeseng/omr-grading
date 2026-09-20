@@ -82,3 +82,38 @@ def test_app_pages_with_results(blank_sheet) -> None:
     assert not at.exception
     assert at.session_state["results"][0].reviewed
     assert at.session_state["results"][0].student_id == "11111"
+
+
+def test_autosave_writes_session(blank_sheet, tmp_path, monkeypatch) -> None:
+    """ตรวจเสร็จแล้วต้องบันทึกไฟล์ให้เองทันที (กันข้อมูลหายเมื่อปิดเบราว์เซอร์ก่อนกด "บันทึกผล")"""
+    import numpy as np
+    from streamlit.testing.v1 import AppTest
+
+    import synth
+    from conftest import encode_jpg
+    from omr import config as C
+    from omr import storage
+
+    sessions = tmp_path / "sessions"
+    monkeypatch.setattr(C, "SESSIONS_DIR", sessions)
+    monkeypatch.setattr(storage.save_session, "__defaults__", ("", sessions))
+    key = {q: "A" for q in range(1, C.NUM_QUESTIONS + 1)}
+    img, *_ = synth.synth_one(np.random.default_rng(3), blank_sheet, C.NUM_QUESTIONS)
+    data = encode_jpg(img)
+
+    # โหมด debug ทำให้ปุ่ม "ตรวจใหม่ทั้งหมด" เรียก run_grading (เส้นทางเดียวกับการอัปโหลดภาพ)
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    at.session_state["answer_key"] = key
+    at.run()
+    at.session_state["results"] = [__import__("omr.pipeline", fromlist=["grade_image"]).grade_image(data, key, "s1.jpg")]
+    at.session_state["uploads"] = {"s1.jpg": data}
+    at.session_state["settings"]["debug"] = True
+    at.switch_page(page_file("setting")).run()
+    [regrade_btn] = [b for b in at.button if "ตรวจใหม่" in b.label]
+    regrade_btn.click().run()
+
+    saved = at.session_state["autosaved"]
+    assert saved, "ตรวจเสร็จแล้วแต่ไม่ได้บันทึกอัตโนมัติ"
+    assert (sessions / saved / "session.json").is_file()
+    sheets, loaded_key = storage.load_session(sessions / saved)
+    assert len(sheets) == 1 and loaded_key == key

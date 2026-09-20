@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import struct
 import time
@@ -72,13 +73,32 @@ def apply_exif_orientation(image: np.ndarray, orientation: int) -> np.ndarray:
     return image
 
 
+def heic_supported() -> bool:
+    """เครื่องนี้เปิดไฟล์ HEIC/HEIF จาก iPhone ได้หรือไม่ (ต้องมี pillow-heif)"""
+    return importlib.util.find_spec("pillow_heif") is not None
+
+
+def _decode_heic(data: bytes) -> np.ndarray:
+    """แปลง HEIC/HEIF เป็นภาพ BGR — pillow-heif หมุนภาพตาม EXIF ให้แล้ว"""
+    import pillow_heif
+
+    try:
+        img = pillow_heif.open_heif(data, convert_hdr_to_8bit=True)
+        rgb = np.asarray(img.to_pillow().convert("RGB"))
+    except Exception as exc:  # noqa: BLE001 — ไฟล์เสียต้องขึ้นข้อความเดียวกับภาพชนิดอื่น
+        raise ImageLoadError(f"เปิดไฟล์ HEIC ไม่ได้: {exc}") from exc
+    return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+
 def load_image(source: bytes | str | Path, filename: str = "") -> np.ndarray:
     """โหลดภาพจาก bytes หรือ path พร้อมแก้ EXIF orientation"""
     name = filename or (Path(source).name if isinstance(source, (str, Path)) else "")
     ext = Path(name).suffix.lower()
-    if ext in C.UNSUPPORTED_HINT_EXTENSIONS:
-        raise ImageLoadError("ไม่รองรับไฟล์ HEIC/HEIF กรุณาแปลงเป็น JPG หรือ PNG ก่อน (เช่น ตั้งค่ากล้องเป็น 'Most Compatible')")
-    if ext and ext not in C.SUPPORTED_EXTENSIONS:
+    heic = ext in C.UNSUPPORTED_HINT_EXTENSIONS
+    if heic and not heic_supported():
+        raise ImageLoadError("ไม่รองรับไฟล์ HEIC/HEIF ในเครื่องนี้ ติดตั้งด้วย pip install pillow-heif "
+                             "หรือแปลงเป็น JPG ก่อน (iPhone: ตั้งค่ากล้องเป็น 'เข้ากันได้มากที่สุด')")
+    if ext and not heic and ext not in C.SUPPORTED_EXTENSIONS:
         raise ImageLoadError(f"ไม่รองรับไฟล์ชนิด {ext} (รองรับ {', '.join(C.SUPPORTED_EXTENSIONS)})")
     if isinstance(source, (str, Path)):
         try:
@@ -89,6 +109,8 @@ def load_image(source: bytes | str | Path, filename: str = "") -> np.ndarray:
         data = bytes(source)
     if not data:
         raise ImageLoadError("ไฟล์ภาพว่างเปล่า")
+    if heic:
+        return _decode_heic(data)
     image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
     if image is None:
         raise ImageLoadError("ไฟล์ภาพเสียหรือไม่ใช่ภาพที่รองรับ")

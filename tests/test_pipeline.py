@@ -100,3 +100,26 @@ def test_exif_orientation(blank_sheet: np.ndarray) -> None:
     assert apply_exif_orientation(small, 6).shape == (3, 2)
     res = grade_image(data, KEY, "exif.jpg")
     assert res.error is None and res.rotated  # EXIF หมุน 180° แล้วตรวจทิศพบว่ากลับหัว
+
+
+def test_heic_photo_is_graded(blank_sheet) -> None:
+    """ภาพ HEIC จาก iPhone ต้องตรวจได้เหมือน JPG (ข้ามถ้าเครื่องนี้ยังไม่ได้ติดตั้ง pillow-heif)"""
+    pillow_heif = pytest.importorskip("pillow_heif")
+    import io
+
+    import cv2
+
+    from omr.pipeline import heic_supported
+
+    assert heic_supported()
+    img, *_ = synth.synth_one(np.random.default_rng(11), blank_sheet, C.NUM_QUESTIONS)
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    buf = io.BytesIO()
+    pillow_heif.from_bytes(mode="RGB", size=(rgb.shape[1], rgb.shape[0]), data=rgb.tobytes()).save(buf, quality=90)
+    heic = buf.getvalue()
+
+    from_heic = grade_image(heic, KEY, "photo.heic")
+    from_jpg = grade_image(encode_jpg(img), KEY, "photo.jpg")
+    assert from_heic.error is None
+    assert from_heic.student_id == from_jpg.student_id
+    assert [q.answer for q in from_heic.questions] == [q.answer for q in from_jpg.questions]

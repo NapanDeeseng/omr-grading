@@ -9,6 +9,7 @@ from components.shared import widgets as W
 from omr import config as C
 from omr.exporter import STATUS_TH
 from omr.models import SheetResult
+from components.shared.state import autosave
 from omr.pipeline import apply_review
 
 BLANK_OPTION = "(ว่าง)"
@@ -80,6 +81,7 @@ def review_section(idx: int, r: SheetResult) -> None:
                 edits = {int(row["ข้อ"]): "" if row["คำตอบที่ถูกต้อง"] in (None, BLANK_OPTION) else
                          str(row["คำตอบที่ถูกต้อง"]) for _, row in edited.iterrows()}
             apply_review(r, st.session_state.answer_key, edits, sid.strip())
+            autosave()  # เก็บผลที่ผู้ตรวจแก้ลงไฟล์ทันที ไม่ต้องรอให้กด "บันทึกผล"
             st.success("บันทึกแล้ว คำนวณคะแนนใหม่เรียบร้อย", icon=":material/check_circle:")
             st.rerun()
     with st.expander("ผลรายข้อทั้งหมด", icon=":material/list_alt:"):

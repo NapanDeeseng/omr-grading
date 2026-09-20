@@ -5,7 +5,7 @@ from __future__ import annotations
 import streamlit as st
 
 from components.shared import widgets as W
-from components.shared.state import default_settings, run_grading, thresholds
+from components.shared.state import autosave, default_settings, run_grading, thresholds
 from omr.pipeline import regrade
 
 
@@ -30,6 +30,7 @@ def render() -> None:
         else:
             for r in st.session_state.results:
                 regrade(r, st.session_state.answer_key, thresholds())
+            autosave()  # (run_grading บันทึกให้เองอยู่แล้ว)
         st.success("ตรวจใหม่เรียบร้อย", icon=":material/check_circle:")
     if row.button("คืนค่าเริ่มต้น", icon=":material/restart_alt:"):
         st.session_state.settings = default_settings()

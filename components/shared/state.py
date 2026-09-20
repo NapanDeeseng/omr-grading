@@ -27,6 +27,7 @@ def init_state() -> None:
     st.session_state.setdefault("uploads", {})  # ชื่อไฟล์ → bytes (ใช้ตรวจใหม่)
     st.session_state.setdefault("current_sheet", 0)
     st.session_state.setdefault("settings", default_settings())
+    st.session_state.setdefault("autosaved", "")  # ชื่อรอบที่บันทึกอัตโนมัติไว้ล่าสุด
 
 
 def thresholds() -> C.Thresholds:
@@ -54,6 +55,23 @@ def run_grading(items: list[tuple[str, bytes]]) -> None:
     bar.progress(1.0, text="ตรวจเสร็จแล้ว")
     st.session_state.results = results
     st.session_state.current_sheet = 0
+    autosave()
+
+
+def autosave() -> None:
+    """บันทึกผลอัตโนมัติทันทีที่ตรวจเสร็จ กันข้อมูลหายเมื่อปิดเบราว์เซอร์โดยยังไม่ได้กด "บันทึกผล"
+    ใช้ชื่อรอบเดิมถ้าเคยบันทึกแล้ว (เขียนทับ) — เขียนไฟล์ไม่สำเร็จต้องไม่ทำให้ผลที่เพิ่งตรวจหาย"""
+    try:
+        folder = storage.save_session(st.session_state.results, st.session_state.answer_key,
+                                      st.session_state.get("session_name")
+                                      or f"ตรวจ_{datetime.now():%Y%m%d_%H%M}")
+    except OSError as exc:
+        st.session_state.autosaved = ""
+        st.warning(f"บันทึกอัตโนมัติไม่สำเร็จ: {exc} — กรุณากด \"บันทึกผล\" หรือ Export Excel เก็บไว้เอง",
+                   icon=":material/warning:")
+        return
+    st.session_state.session_name = folder.name
+    st.session_state.autosaved = folder.name
 
 
 def save_results(name: str = "") -> None:
