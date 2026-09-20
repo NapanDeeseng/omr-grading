@@ -15,8 +15,21 @@ from omr.models import SheetResult
 
 
 def render() -> None:
-    W.header("ส่งออก Excel", "ดาวน์โหลดไฟล์ Excel และบันทึก/เปิดผลการตรวจที่เก็บไว้ในเครื่อง", "description")
+    sub = ("ดาวน์โหลดไฟล์ Excel เก็บไว้ในเครื่องของคุณ" if C.PUBLIC_MODE
+           else "ดาวน์โหลดไฟล์ Excel และบันทึก/เปิดผลการตรวจที่เก็บไว้ในเครื่อง")
+    W.header("ส่งออก Excel", sub, "description")
     results: list[SheetResult] = st.session_state.results
+    if C.PUBLIC_MODE:
+        # เว็บสาธารณะไม่เก็บไฟล์ไว้บนเซิร์ฟเวอร์ จึงไม่มีส่วน "บันทึกลงเครื่อง" และ "ผลที่บันทึกไว้"
+        with st.container(key="card_excel"):
+            W.card_title("ดาวน์โหลด Excel", "download")
+            st.caption("4 ชีต: สรุปคะแนน (แถวเหลือง = ต้องตรวจสอบ) · รายข้อ · สถิติรายข้อ · เฉลย")
+            if results:
+                W.excel_download("ดาวน์โหลด Excel", "export_page")
+            else:
+                st.info("ยังไม่มีผลการตรวจ", icon=":material/info:")
+            st.caption(":material/lock: ภาพและคะแนนอยู่ในเบราว์เซอร์ของคุณเท่านั้น ไม่ถูกเก็บบนเซิร์ฟเวอร์")
+        return
     left, right = st.columns([1, 1], gap="medium")
     with left, st.container(key="card_excel"):
         W.card_title("ดาวน์โหลด Excel", "download")
@@ -25,6 +38,8 @@ def render() -> None:
             W.excel_download("ดาวน์โหลด Excel", "export_page")
         else:
             st.info("ยังไม่มีผลการตรวจ", icon=":material/info:")
+        if C.PUBLIC_MODE:
+            return
         st.divider()
         W.card_title("บันทึกผลการตรวจลงเครื่อง", "save")
         st.caption(f"เก็บเป็น JSON + Excel + ภาพ ใน {C.SESSIONS_DIR}")

@@ -57,13 +57,16 @@ def render() -> None:
         st.warning(w, icon=":material/warning:")
     st.space("small")
     # บอกให้ครูรู้ว่าผลถูกบันทึกให้อัตโนมัติแล้ว จะได้ไม่กังวลว่าปิดเบราว์เซอร์แล้วข้อมูลหาย
-    if saved := st.session_state.get("autosaved"):
+    if C.PUBLIC_MODE:
+        st.caption(":material/lock: เว็บนี้ไม่เก็บภาพและคะแนนไว้บนเซิร์ฟเวอร์ "
+                   "ผลจะหายเมื่อปิดหน้าเว็บ — กรุณาดาวน์โหลด Excel เก็บไว้")
+    elif saved := st.session_state.get("autosaved"):
         st.caption(f":material/cloud_done: บันทึกอัตโนมัติแล้วที่ results/sessions/{saved} "
                    "(กด \"บันทึกผล\" อีกครั้งหลังแก้ไขผล เพื่อบันทึกทับ)")
     row = st.container(horizontal=True, horizontal_alignment="right", gap="small")
     if row.button("แก้ไขผล", icon=":material/edit:"):
         go("result")
-    if row.button("บันทึกผล", icon=":material/save:"):
+    if not C.PUBLIC_MODE and row.button("บันทึกผล", icon=":material/save:"):
         save_results()
     with row:
         W.excel_download("ดาวน์โหลด Excel", "export_home")

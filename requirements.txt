@@ -9,6 +9,6 @@ ultralytics>=8.1
 pillow-heif>=0.16   # เปิดภาพ HEIC/HEIF จาก iPhone
 pandas>=2.0
 openpyxl>=3.1
-streamlit>=1.44
+streamlit>=1.59      # โค้ดใช้ st.space / st.container(horizontal=True) ของรุ่นใหม่
 reportlab>=4.0
 pytest>=8.0         # ใช้ตอนพัฒนาเท่านั้น (ไม่จำเป็นสำหรับผู้ใช้ทั่วไป)

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -207,6 +208,15 @@ PREVIEW_MAX_SIDE_PX: int = 1200      # ขนาดภาพต้นฉบั�
 # โฟลเดอร์เก็บผล (ไม่ใช้ฐานข้อมูล — เก็บเป็นไฟล์ JSON/Excel/ภาพ)
 RESULTS_DIR: Path = PROJECT_ROOT / "results"
 SESSIONS_DIR: Path = RESULTS_DIR / "sessions"
+
+# โหมดสาธารณะ: เปิดด้วย OMR_PUBLIC=1 เมื่อ deploy เป็นเว็บที่ใครก็เข้าได้
+# ระบบจะไม่เขียนภาพ/รหัสนักเรียนลงเซิร์ฟเวอร์เลย ผู้ใช้ต้องดาวน์โหลด Excel เก็บเอง
+# (ไฟล์บนเซิร์ฟเวอร์ฟรีหายเมื่อ restart อยู่แล้ว และเป็นข้อมูลส่วนบุคคลของนักเรียนคนอื่น)
+PUBLIC_MODE: bool = os.getenv("OMR_PUBLIC", "").strip().lower() in ("1", "true", "yes")
+
+# ภาพตัวอย่างให้คนที่ยังไม่มีกระดาษคำตอบกดลองได้ทันที
+DEMO_IMAGE: Path = SAMPLES_DIR / "demo_sheet.jpg"
+DEMO_KEY: Path = SAMPLES_DIR / "demo_answer_key.csv"
 
 
 @dataclass(frozen=True)

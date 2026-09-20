@@ -95,6 +95,7 @@ def test_autosave_writes_session(blank_sheet, tmp_path, monkeypatch) -> None:
     from omr import storage
 
     sessions = tmp_path / "sessions"
+    monkeypatch.setattr(C, "PUBLIC_MODE", False)
     monkeypatch.setattr(C, "SESSIONS_DIR", sessions)
     monkeypatch.setattr(storage.save_session, "__defaults__", ("", sessions))
     key = {q: "A" for q in range(1, C.NUM_QUESTIONS + 1)}
@@ -117,3 +118,59 @@ def test_autosave_writes_session(blank_sheet, tmp_path, monkeypatch) -> None:
     assert (sessions / saved / "session.json").is_file()
     sheets, loaded_key = storage.load_session(sessions / saved)
     assert len(sheets) == 1 and loaded_key == key
+
+
+def test_public_mode_keeps_nothing_on_server(blank_sheet, tmp_path, monkeypatch) -> None:
+    """โหมดสาธารณะ (OMR_PUBLIC=1) ต้องไม่เขียนภาพ/คะแนนของนักเรียนลงเซิร์ฟเวอร์เลย"""
+    import numpy as np
+    from streamlit.testing.v1 import AppTest
+
+    import synth
+    from conftest import encode_jpg
+    from omr import config as C
+    from omr import storage
+    from omr.pipeline import grade_image
+
+    sessions = tmp_path / "sessions"
+    monkeypatch.setattr(C, "PUBLIC_MODE", True)
+    monkeypatch.setattr(C, "SESSIONS_DIR", sessions)
+    monkeypatch.setattr(storage.save_session, "__defaults__", ("", sessions))
+    key = {q: "A" for q in range(1, C.NUM_QUESTIONS + 1)}
+    img, *_ = synth.synth_one(np.random.default_rng(5), blank_sheet, C.NUM_QUESTIONS)
+    data = encode_jpg(img)
+
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    at.session_state["answer_key"] = key
+    at.run()
+    at.session_state["results"] = [grade_image(data, key, "s1.jpg")]
+    at.session_state["uploads"] = {"s1.jpg": data}
+    at.session_state["settings"]["debug"] = True
+    at.switch_page(page_file("setting")).run()
+    [regrade_btn] = [b for b in at.button if "ตรวจใหม่" in b.label]
+    regrade_btn.click().run()
+    assert not at.exception
+    assert not at.session_state["autosaved"] and not sessions.exists(), "โหมดสาธารณะต้องไม่เขียนไฟล์"
+
+    # หน้าส่งออกต้องไม่มีปุ่มบันทึกลงเครื่อง เหลือแค่ดาวน์โหลด Excel
+    at.switch_page(page_file("export_excel")).run()
+    assert not at.exception
+    assert not [b for b in at.button if "บันทึก" in b.label]
+
+
+def test_demo_button_grades_sample_sheet() -> None:
+    """ปุ่ม "ลองด้วยภาพตัวอย่าง" ต้องตรวจภาพที่มากับระบบและพาไปหน้าผลได้ (สำหรับคนที่ยังไม่มีกระดาษคำตอบ)"""
+    from streamlit.testing.v1 import AppTest
+
+    from omr import config as C
+
+    assert C.DEMO_IMAGE.is_file() and C.DEMO_KEY.is_file(), "ไฟล์ตัวอย่างต้องมากับโปรเจกต์"
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=90)
+    at.run()
+    at.switch_page(page_file("upload")).run()
+    [demo] = [b for b in at.button if "ภาพตัวอย่าง" in b.label]
+    demo.click().run()
+    assert not at.exception
+    results = at.session_state["results"]
+    assert len(results) == 1 and results[0].error is None
+    assert results[0].student_id.isdigit(), "ต้องอ่านรหัสนักเรียนจากภาพตัวอย่างได้"
+    assert results[0].score > 0

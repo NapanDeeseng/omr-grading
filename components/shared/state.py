@@ -27,6 +27,7 @@ def init_state() -> None:
     st.session_state.setdefault("uploads", {})  # ชื่อไฟล์ → bytes (ใช้ตรวจใหม่)
     st.session_state.setdefault("current_sheet", 0)
     st.session_state.setdefault("settings", default_settings())
+    st.session_state.setdefault("is_demo", False)  # ผลชุดนี้มาจากภาพตัวอย่างหรือไม่
     st.session_state.setdefault("autosaved", "")  # ชื่อรอบที่บันทึกอัตโนมัติไว้ล่าสุด
 
 
@@ -60,7 +61,10 @@ def run_grading(items: list[tuple[str, bytes]]) -> None:
 
 def autosave() -> None:
     """บันทึกผลอัตโนมัติทันทีที่ตรวจเสร็จ กันข้อมูลหายเมื่อปิดเบราว์เซอร์โดยยังไม่ได้กด "บันทึกผล"
-    ใช้ชื่อรอบเดิมถ้าเคยบันทึกแล้ว (เขียนทับ) — เขียนไฟล์ไม่สำเร็จต้องไม่ทำให้ผลที่เพิ่งตรวจหาย"""
+    ใช้ชื่อรอบเดิมถ้าเคยบันทึกแล้ว (เขียนทับ) — เขียนไฟล์ไม่สำเร็จต้องไม่ทำให้ผลที่เพิ่งตรวจหาย
+    โหมดสาธารณะไม่บันทึกอะไรลงเซิร์ฟเวอร์เลย (ข้อมูลนักเรียนของผู้ใช้คนอื่น)"""
+    if C.PUBLIC_MODE:
+        return
     try:
         folder = storage.save_session(st.session_state.results, st.session_state.answer_key,
                                       st.session_state.get("session_name")
@@ -72,6 +76,13 @@ def autosave() -> None:
         return
     st.session_state.session_name = folder.name
     st.session_state.autosaved = folder.name
+
+
+def run_demo() -> None:
+    """ตรวจภาพตัวอย่างที่มากับระบบ ให้คนที่ยังไม่มีกระดาษคำตอบเห็นผลได้ทันที"""
+    st.session_state.answer_key = parse_answer_key(C.DEMO_KEY)
+    st.session_state.is_demo = True
+    run_grading([("ภาพตัวอย่าง.jpg", C.DEMO_IMAGE.read_bytes())])
 
 
 def save_results(name: str = "") -> None:

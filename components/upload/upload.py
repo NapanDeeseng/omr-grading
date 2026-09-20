@@ -7,7 +7,7 @@ import streamlit as st
 
 from components.shared import widgets as W
 from components.shared.pages import go
-from components.shared.state import load_example_key, run_grading
+from components.shared.state import load_example_key, run_demo, run_grading
 from omr import config as C
 from omr.errors import AnswerKeyError
 from omr.grader import AnswerKey, answer_key_to_csv, parse_answer_key
@@ -35,6 +35,14 @@ def render() -> None:
         if st.session_state.results:
             if st.button("ดูผลที่หน้าหลัก", icon=":material/arrow_forward:"):
                 go("dashboard")
+        st.divider()
+        # ให้คนที่ยังไม่มีกระดาษคำตอบลองดูผลได้ทันที (ใช้เฉลยของภาพตัวอย่างเอง)
+        st.caption("ยังไม่มีกระดาษคำตอบ? ลองด้วยภาพตัวอย่างได้เลย")
+        if st.button("ลองด้วยภาพตัวอย่าง", icon=":material/science:", disabled=not C.DEMO_IMAGE.is_file()):
+            run_demo()
+            go("dashboard")
+        if C.PUBLIC_MODE:
+            st.caption(":material/lock: ภาพที่อัปโหลดใช้ตรวจในหน่วยความจำเท่านั้น ไม่ถูกเก็บไว้บนเซิร์ฟเวอร์")
 
 
 def key_editor() -> None:
