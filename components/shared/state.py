@@ -45,6 +45,8 @@ def load_example_key() -> AnswerKey:
 
 def run_grading(items: list[tuple[str, bytes]]) -> None:
     """ตรวจภาพทั้งหมดพร้อม progress bar (ใช้ในหน้าอัปโหลดภาพและตั้งค่า)"""
+    # ตรวจชุดใหม่ = รอบใหม่เสมอ ห้ามใช้ชื่อรอบเดิมเพราะ autosave จะเขียนทับผลที่ครูบันทึกไว้ก่อนหน้า
+    st.session_state.session_name = f"ตรวจ_{datetime.now():%Y%m%d_%H%M%S}"
     bar = st.progress(0.0, text="กำลังเริ่มตรวจ...")
     results: list[SheetResult] = []
     s = st.session_state.settings
@@ -68,7 +70,7 @@ def autosave() -> None:
     try:
         folder = storage.save_session(st.session_state.results, st.session_state.answer_key,
                                       st.session_state.get("session_name")
-                                      or f"ตรวจ_{datetime.now():%Y%m%d_%H%M}")
+                                      or f"ตรวจ_{datetime.now():%Y%m%d_%H%M%S}")
     except OSError as exc:
         st.session_state.autosaved = ""
         st.warning(f"บันทึกอัตโนมัติไม่สำเร็จ: {exc} — กรุณากด \"บันทึกผล\" หรือ Export Excel เก็บไว้เอง",

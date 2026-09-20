@@ -174,3 +174,42 @@ def test_demo_button_grades_sample_sheet() -> None:
     assert len(results) == 1 and results[0].error is None
     assert results[0].student_id.isdigit(), "ต้องอ่านรหัสนักเรียนจากภาพตัวอย่างได้"
     assert results[0].score > 0
+
+
+def test_new_batch_does_not_overwrite_saved_session(blank_sheet, tmp_path, monkeypatch) -> None:
+    """ตรวจชุดใหม่ต้องไปโฟลเดอร์ใหม่ ห้ามเขียนทับรอบที่ครูบันทึก/เปิดค้างไว้ก่อนหน้า"""
+    import numpy as np
+    from streamlit.testing.v1 import AppTest
+
+    import synth
+    from conftest import encode_jpg
+    from omr import config as C
+    from omr import storage
+    from omr.pipeline import grade_image
+
+    sessions = tmp_path / "sessions"
+    monkeypatch.setattr(C, "PUBLIC_MODE", False)
+    monkeypatch.setattr(C, "SESSIONS_DIR", sessions)
+    monkeypatch.setattr(storage.save_session, "__defaults__", ("", sessions))
+    key = {q: "A" for q in range(1, C.NUM_QUESTIONS + 1)}
+    old_img, *_ = synth.synth_one(np.random.default_rng(1), blank_sheet, C.NUM_QUESTIONS)
+    new_img, *_ = synth.synth_one(np.random.default_rng(2), blank_sheet, C.NUM_QUESTIONS)
+
+    old = [grade_image(encode_jpg(old_img), key, f"old{i}.jpg") for i in range(3)]
+    storage.save_session(old, key, "รอบเก่าของครู")
+
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=90)
+    at.session_state["answer_key"] = key
+    at.run()
+    at.session_state["session_name"] = "รอบเก่าของครู"  # เหมือนเพิ่งกด "เปิด" รอบที่บันทึกไว้
+    at.session_state["results"] = [grade_image(encode_jpg(new_img), key, "new.jpg")]
+    at.session_state["uploads"] = {"new.jpg": encode_jpg(new_img)}
+    at.session_state["settings"]["debug"] = True
+    at.switch_page(page_file("setting")).run()
+    [regrade_btn] = [b for b in at.button if "ตรวจใหม่" in b.label]
+    regrade_btn.click().run()
+
+    assert not at.exception
+    assert len(storage.load_session(sessions / "รอบเก่าของครู")[0]) == 3, "รอบเก่าถูกเขียนทับ"
+    assert at.session_state["autosaved"] != "รอบเก่าของครู"
+    assert len(list(sessions.iterdir())) == 2
