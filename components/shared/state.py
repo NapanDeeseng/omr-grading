@@ -9,6 +9,7 @@ import streamlit as st
 from omr import config as C
 from omr import storage
 from omr.exporter import ExamInfo
+from omr.roster import Roster
 from omr.grader import AnswerKey, parse_answer_key
 from omr.models import SheetResult
 from omr.pipeline import grade_image
@@ -37,10 +38,19 @@ def init_state() -> None:
     st.session_state.setdefault("autosaved", "")  # ชื่อรอบที่บันทึกอัตโนมัติไว้ล่าสุด
 
 
+def roster() -> Roster:
+    """รายชื่อนักเรียนที่อัปโหลดไว้ (ว่าง = ไม่มี)
+
+    ใช้ setdefault แทนการพึ่ง init_state อย่างเดียว เพราะ session ที่เปิดค้างไว้ตั้งแต่ก่อนอัปเดตโปรแกรม
+    อาจยังไม่มีคีย์นี้ (Streamlit ที่รันค้างอยู่ไม่ได้โหลดโค้ด init_state ใหม่เสมอไป)"""
+    return st.session_state.setdefault("roster", {})
+
+
 def exam_info() -> ExamInfo:
     """หัวรายงานใน Excel: ชื่อการสอบ / ห้อง / วันที่ ที่ครูกรอกไว้ในหน้าส่งออก Excel"""
-    return ExamInfo(title=st.session_state.exam_title.strip(), room=st.session_state.exam_room.strip(),
-                    exam_date=st.session_state.exam_date)
+    ss = st.session_state
+    return ExamInfo(title=str(ss.get("exam_title") or "").strip(), room=str(ss.get("exam_room") or "").strip(),
+                    exam_date=ss.get("exam_date"))
 
 
 def thresholds() -> C.Thresholds:
@@ -83,7 +93,7 @@ def autosave() -> None:
         folder = storage.save_session(st.session_state.results, st.session_state.answer_key,
                                       st.session_state.get("session_name")
                                       or f"ตรวจ_{datetime.now():%Y%m%d_%H%M%S}",
-                                      roster=st.session_state.roster, exam=exam_info())
+                                      roster=roster(), exam=exam_info())
     except OSError as exc:
         st.session_state.autosaved = ""
         st.warning(f"บันทึกอัตโนมัติไม่สำเร็จ: {exc} — กรุณากด \"บันทึกผล\" หรือ Export Excel เก็บไว้เอง",
@@ -104,6 +114,6 @@ def save_results(name: str = "") -> None:
     """บันทึกผลเป็นไฟล์ใน results/sessions (ใช้ในหน้าหลักและส่งออก Excel)"""
     folder = storage.save_session(st.session_state.results, st.session_state.answer_key,
                                   name or st.session_state.get("session_name") or f"ตรวจ_{datetime.now():%Y%m%d_%H%M}",
-                                  roster=st.session_state.roster, exam=exam_info())
+                                  roster=roster(), exam=exam_info())
     st.session_state.session_name = folder.name
     st.toast(f"บันทึกแล้วที่ results/sessions/{folder.name}", icon=":material/save:")

@@ -271,3 +271,34 @@ def test_export_page_matches_roster_names() -> None:
     at.switch_page(page_file("export_excel")).run()
     assert not at.exception
     assert any("จับคู่ชื่อได้ 1 จาก 1 แผ่น" in s.value and "ไม่มีกระดาษคำตอบ 1 คน" in s.value for s in at.success)
+
+
+def test_pages_survive_session_started_before_update(monkeypatch) -> None:
+    """session ที่เปิดค้างไว้ตั้งแต่ก่อนอัปเดตโปรแกรม (init_state รุ่นเก่า ไม่มีคีย์ roster / exam_*)
+    ต้องเปิดทุกหน้าและดาวน์โหลด Excel ได้ ไม่ขึ้น AttributeError"""
+    from streamlit.testing.v1 import AppTest
+
+    from components.shared import state
+    from omr import config as C
+    from omr.grader import parse_answer_key
+    from omr.pipeline import grade_image
+
+    new_keys = ("roster", "exam_title", "exam_room", "exam_date")
+    original = state.init_state
+
+    def old_init_state() -> None:
+        original()
+        for k in new_keys:
+            st_state = __import__("streamlit").session_state
+            if k in st_state:
+                del st_state[k]
+
+    monkeypatch.setattr(state, "init_state", old_init_state)
+    key = parse_answer_key(C.DEMO_KEY)
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=90)
+    at.session_state["answer_key"] = key
+    at.session_state["results"] = [grade_image(C.DEMO_IMAGE.read_bytes(), key, "demo.jpg")]
+    at.run()
+    for name in PAGE_NAMES:
+        at.switch_page(page_file(name)).run()
+        assert not at.exception, f"หน้า {name}: {at.exception}"

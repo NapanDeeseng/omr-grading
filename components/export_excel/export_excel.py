@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from components.shared import widgets as W
-from components.shared.state import save_results
+from components.shared.state import roster as current_roster, save_results
 from omr import config as C
 from omr import storage
 from omr.models import SheetResult
@@ -72,7 +72,7 @@ def exam_section(results: list[SheetResult]) -> None:
             st.session_state.roster_name = up.name
         except RosterError as exc:
             st.error(str(exc), icon=":material/error:")
-    roster = st.session_state.roster
+    roster = current_roster()
     row = st.container(horizontal=True, vertical_alignment="center", gap="medium")
     row.download_button("ดาวน์โหลดแบบฟอร์มรายชื่อ", TEMPLATE_CSV.encode("utf-8-sig"), "แบบฟอร์มรายชื่อนักเรียน.csv",
                         "text/csv", icon=":material/table_view:")

@@ -151,10 +151,10 @@ def answer_table(r: SheetResult, key: str) -> QuestionResult | None:
 
 def excel_download(label: str, key: str, **kwargs) -> None:
     """ปุ่มดาวน์โหลด Excel (ปุ่มหลักสีน้ำเงิน) — ชีตแรกเป็นรายงานคะแนนรายห้องพร้อมชื่อนักเรียน"""
-    from components.shared.state import exam_info  # state import widgets ไม่ได้ (วนกัน) จึง import ตอนใช้
+    from components.shared.state import exam_info, roster  # state import widgets ไม่ได้ (วนกัน) จึง import ตอนใช้
 
     exam = exam_info()
-    data = export_excel(st.session_state.results, st.session_state.answer_key, st.session_state.roster, exam)
+    data = export_excel(st.session_state.results, st.session_state.answer_key, roster(), exam)
     stem = "_".join(p for p in (exam.title, exam.room) if p) or "omr_results"
     stem = "".join(ch if ch.isalnum() or ch in " ._-" else "-" for ch in stem).strip() or "omr_results"
     st.download_button(label, data, f"{stem}_{datetime.now():%Y%m%d_%H%M}.xlsx", XLSX_MIME,
