@@ -22,7 +22,8 @@ import numpy as np
 from omr import __version__
 from omr import config as C
 from omr.annotate import annotate
-from omr.exporter import export_excel
+from omr.exporter import ExamInfo, export_excel
+from omr.roster import Roster
 from omr.grader import AnswerKey
 from omr.models import ProblemBox, QuestionResult, ReadResult, SheetResult
 
@@ -76,7 +77,7 @@ def _read_jpg(path: Path) -> np.ndarray | None:
 
 
 def save_session(results: list[SheetResult], answer_key: AnswerKey, name: str = "",
-                 root: Path = C.SESSIONS_DIR) -> Path:
+                 root: Path = C.SESSIONS_DIR, *, roster: Roster | None = None, exam: ExamInfo | None = None) -> Path:
     """บันทึกผลการตรวจทั้งหมดลงโฟลเดอร์ (เขียนทับถ้าชื่อซ้ำ) คืน path ของโฟลเดอร์"""
     folder = root / _safe_name(name)
     if folder.exists():
@@ -99,7 +100,7 @@ def save_session(results: list[SheetResult], answer_key: AnswerKey, name: str = 
         "sheets": sheets,
     }
     (folder / SESSION_FILE).write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
-    (folder / EXCEL_FILE).write_bytes(export_excel(results, answer_key))
+    (folder / EXCEL_FILE).write_bytes(export_excel(results, answer_key, roster, exam))
     return folder
 
 

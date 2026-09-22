@@ -249,3 +249,25 @@ def test_camera_mode_grades_captured_sheets(blank_sheet, tmp_path, monkeypatch) 
     results = at.session_state["results"]
     assert len(results) == 2 and all(r.error is None for r in results)
     assert at.session_state["captures"] == [], "ตรวจแล้วต้องล้างรายการภาพที่ถ่าย เพื่อเริ่มชุดใหม่"
+
+
+def test_export_page_matches_roster_names() -> None:
+    """หน้าส่งออก Excel: ใส่รายชื่อแล้วบอกได้ว่าจับคู่ชื่อได้กี่แผ่น ขาดสอบกี่คน"""
+    from streamlit.testing.v1 import AppTest
+
+    from omr import config as C
+    from omr.grader import parse_answer_key
+    from omr.pipeline import grade_image
+    from omr.roster import Student
+
+    key = parse_answer_key(C.DEMO_KEY)
+    demo = grade_image(C.DEMO_IMAGE.read_bytes(), key, "demo.jpg")
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=90)
+    at.session_state["answer_key"] = key
+    at.session_state["results"] = [demo]
+    at.session_state["roster"] = {demo.student_id: Student(demo.student_id, "เด็กหญิงทดสอบ ตัวอย่าง", "ม.3/1", 1),
+                                  "00001": Student("00001", "เด็กชายขาด สอบ", "ม.3/1", 2)}
+    at.run()
+    at.switch_page(page_file("export_excel")).run()
+    assert not at.exception
+    assert any("จับคู่ชื่อได้ 1 จาก 1 แผ่น" in s.value and "ไม่มีกระดาษคำตอบ 1 คน" in s.value for s in at.success)

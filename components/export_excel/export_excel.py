@@ -12,6 +12,7 @@ from components.shared.state import save_results
 from omr import config as C
 from omr import storage
 from omr.models import SheetResult
+from omr.roster import TEMPLATE_CSV, RosterError, parse_roster, rooms
 
 
 def render() -> None:
@@ -19,6 +20,9 @@ def render() -> None:
            else "ดาวน์โหลดไฟล์ Excel และบันทึก/เปิดผลการตรวจที่เก็บไว้ในเครื่อง")
     W.header("ส่งออก Excel", sub, "description")
     results: list[SheetResult] = st.session_state.results
+    with st.container(key="card_exam"):
+        exam_section(results)
+    st.space("small")
     if C.PUBLIC_MODE:
         # เว็บสาธารณะไม่เก็บไฟล์ไว้บนเซิร์ฟเวอร์ จึงไม่มีส่วน "บันทึกลงเครื่อง" และ "ผลที่บันทึกไว้"
         with st.container(key="card_excel"):
@@ -49,6 +53,51 @@ def render() -> None:
             save_results(name)
     with right, st.container(key="card_history"):
         history_section()
+
+
+def exam_section(results: list[SheetResult]) -> None:
+    """ข้อมูลหัวรายงาน + รายชื่อนักเรียน → Excel ได้รายงานว่าห้องไหน นักเรียนชื่ออะไร ได้คะแนนเท่าไร"""
+    W.card_title("ข้อมูลการสอบและรายชื่อนักเรียน", "groups")
+    c1, c2, c3 = st.columns([2, 1, 1])
+    c1.text_input("ชื่อการสอบ / วิชา", key="exam_title", placeholder="เช่น สอบกลางภาค คณิตศาสตร์ ม.3")
+    c2.text_input("ห้อง", key="exam_room", placeholder="เช่น ม.3/1",
+                  help="ใช้เมื่อไฟล์รายชื่อไม่มีคอลัมน์ห้อง ถ้ามีคอลัมน์ห้อง ระบบแยกชีตให้ห้องละชีตเอง")
+    c3.date_input("วันที่สอบ", key="exam_date", format="DD/MM/YYYY")
+
+    up = st.file_uploader("รายชื่อนักเรียน (CSV หรือ Excel: รหัส, ชื่อ, นามสกุล, ห้อง, เลขที่) — ไม่บังคับ",
+                          type=["csv", "xlsx", "xls"], key="roster_upload")
+    if up is not None and st.session_state.get("roster_name") != up.name:
+        try:
+            st.session_state.roster = parse_roster(up.getvalue(), up.name)
+            st.session_state.roster_name = up.name
+        except RosterError as exc:
+            st.error(str(exc), icon=":material/error:")
+    roster = st.session_state.roster
+    row = st.container(horizontal=True, vertical_alignment="center", gap="medium")
+    row.download_button("ดาวน์โหลดแบบฟอร์มรายชื่อ", TEMPLATE_CSV.encode("utf-8-sig"), "แบบฟอร์มรายชื่อนักเรียน.csv",
+                        "text/csv", icon=":material/table_view:")
+    if not roster:
+        row.caption("ไม่มีรายชื่อก็ส่งออกได้ แต่ Excel จะมีแค่รหัสนักเรียน ไม่มีชื่อ")
+        return
+    if row.button("ล้างรายชื่อ", icon=":material/close:"):
+        st.session_state.roster = {}
+        st.session_state.roster_name = None
+        st.rerun()
+    room_list = [r or "ไม่ระบุห้อง" for r in rooms(roster)]
+    row.caption(f"รายชื่อ {len(roster)} คน · {len(room_list)} ห้อง ({', '.join(room_list[:6])}"
+                f"{' …' if len(room_list) > 6 else ''})")
+    if results:
+        graded = [r for r in results if not r.error and r.id_valid]
+        matched = sum(r.student_id in roster for r in graded)
+        submitted = {r.student_id for r in graded}
+        absent = sum(sid not in submitted for sid in roster)
+        not_found = len(results) - matched
+        msg = f"จับคู่ชื่อได้ {matched} จาก {len(results)} แผ่น · นักเรียนที่ไม่มีกระดาษคำตอบ {absent} คน"
+        if not_found:
+            st.warning(msg + f" · หาชื่อไม่เจอ {not_found} แผ่น (ดูชีต \"ตรวจสอบรหัส\" ใน Excel)",
+                       icon=":material/warning:")
+        else:
+            st.success(msg, icon=":material/check_circle:")
 
 
 def history_section() -> None:
