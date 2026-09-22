@@ -21,3 +21,8 @@ samples/synthetic/
 
 # เก็บ models/omr_problems_yolov8n.pt ไว้ (6 MB, เทรนนาน) แต่ไม่เก็บโมเดลตั้งต้นที่ดาวน์โหลดได้
 models/yolov8n.pt
+
+# zip ของทั้งโปรเจกต์ (สร้างใหม่ได้ด้วย git archive — ดู README) และค่าตั้งของเครื่องมือที่ใช้พัฒนา
+*.zip
+.claude/
+.kilo/
