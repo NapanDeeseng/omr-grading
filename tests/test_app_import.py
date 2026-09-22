@@ -213,3 +213,39 @@ def test_new_batch_does_not_overwrite_saved_session(blank_sheet, tmp_path, monke
     assert len(storage.load_session(sessions / "รอบเก่าของครู")[0]) == 3, "รอบเก่าถูกเขียนทับ"
     assert at.session_state["autosaved"] != "รอบเก่าของครู"
     assert len(list(sessions.iterdir())) == 2
+
+
+def test_camera_mode_grades_captured_sheets(blank_sheet, tmp_path, monkeypatch) -> None:
+    """โหมดกล้อง: ภาพที่ถ่ายสะสมไว้หลายแผ่นถูกตรวจครบเมื่อกดเริ่มตรวจ และรายการที่ถ่ายถูกล้าง"""
+    import hashlib
+
+    import numpy as np
+    from streamlit.testing.v1 import AppTest
+
+    import synth
+    from components.upload import upload
+    from conftest import encode_jpg
+    from omr import config as C
+    from omr import storage
+
+    monkeypatch.setattr(C, "SESSIONS_DIR", tmp_path / "sessions")
+    monkeypatch.setattr(storage.save_session, "__defaults__", ("", tmp_path / "sessions"))
+    key = {q: "A" for q in range(1, C.NUM_QUESTIONS + 1)}
+    shots = [encode_jpg(synth.synth_one(np.random.default_rng(s), blank_sheet, C.NUM_QUESTIONS)[0]) for s in (21, 22)]
+
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=90)
+    at.session_state["answer_key"] = key
+    at.session_state["image_source"] = upload.CAMERA
+    at.run()
+    # AppTest ยังสั่งกล้องไม่ได้ จึงใส่ภาพที่ "ถ่ายแล้ว" ลงรายการตรง ๆ (รูปแบบเดียวกับ _keep_capture)
+    at.session_state["captures"] = [(f"กล้อง_{i}.jpg", d, hashlib.sha1(d).hexdigest()) for i, d in enumerate(shots)]
+    at.switch_page(page_file("upload")).run()
+    assert not at.exception
+    [start] = [b for b in at.button if b.label.startswith("เริ่มตรวจ")]
+    assert start.label == "เริ่มตรวจ 2 แผ่น" and not start.disabled
+    start.click().run()
+
+    assert not at.exception
+    results = at.session_state["results"]
+    assert len(results) == 2 and all(r.error is None for r in results)
+    assert at.session_state["captures"] == [], "ตรวจแล้วต้องล้างรายการภาพที่ถ่าย เพื่อเริ่มชุดใหม่"

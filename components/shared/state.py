@@ -25,6 +25,7 @@ def init_state() -> None:
     st.session_state.setdefault("answer_key", {})
     st.session_state.setdefault("results", [])
     st.session_state.setdefault("uploads", {})  # ชื่อไฟล์ → bytes (ใช้ตรวจใหม่)
+    st.session_state.setdefault("captures", [])  # ภาพที่ถ่ายด้วยกล้องแต่ยังไม่ได้ตรวจ: (ชื่อ, bytes, sha1)
     st.session_state.setdefault("current_sheet", 0)
     st.session_state.setdefault("settings", default_settings())
     st.session_state.setdefault("is_demo", False)  # ผลชุดนี้มาจากภาพตัวอย่างหรือไม่

@@ -1,6 +1,9 @@
-"""หน้าอัปโหลดภาพ: ขั้นที่ 1 เฉลย → ขั้นที่ 2 อัปโหลดภาพ → เริ่มตรวจ"""
+"""หน้าอัปโหลดภาพ: ขั้นที่ 1 เฉลย → ขั้นที่ 2 อัปโหลดภาพหรือถ่ายด้วยกล้อง → เริ่มตรวจ"""
 
 from __future__ import annotations
+
+import hashlib
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -15,23 +18,25 @@ from omr.pipeline import heic_supported
 
 
 def render() -> None:
-    W.header("อัปโหลดภาพ", "กำหนดเฉลย แล้วอัปโหลดภาพถ่ายกระดาษคำตอบได้ครั้งละหลายแผ่น", "photo_camera")
+    W.header("อัปโหลดภาพ", "กำหนดเฉลย แล้วอัปโหลดภาพหรือถ่ายกระดาษคำตอบด้วยกล้องได้ครั้งละหลายแผ่น", "photo_camera")
     left, right = st.columns([1, 1], gap="medium")
     with left, st.container(key="card_key"):
         key_editor()
     with right, st.container(key="card_upload"):
-        W.card_title("ขั้นที่ 2 · อัปโหลดภาพกระดาษคำตอบ", "add_photo_alternate")
-        # HEIC จาก iPhone เปิดได้เมื่อติดตั้ง pillow-heif เท่านั้น จึงไม่โชว์ถ้าเครื่องนี้ยังไม่มี
-        types = ["jpg", "jpeg", "png"] + (["heic", "heif"] if heic_supported() else [])
-        files = st.file_uploader(f"เลือกภาพ ({' / '.join(t.upper() for t in types)}) ได้หลายไฟล์", type=types,
-                                 accept_multiple_files=True)
+        W.card_title("ขั้นที่ 2 · เพิ่มภาพกระดาษคำตอบ", "add_photo_alternate")
+        mode = st.segmented_control("วิธีเพิ่มภาพ", [UPLOAD, CAMERA], default=UPLOAD, key="image_source",
+                                    label_visibility="collapsed") or UPLOAD
+        items = upload_items() if mode == UPLOAD else camera_items()
         has_key = bool(st.session_state.answer_key)
         if not has_key:
             st.warning("กรุณากำหนดเฉลยในขั้นที่ 1 ก่อนเริ่มตรวจ", icon=":material/info:")
         st.caption(f"YOLOv8n: {W.yolo_status() if st.session_state.settings['yolo'] else 'ปิดใช้งาน'}")
-        if st.button("เริ่มตรวจ", icon=":material/play_arrow:", type="primary", disabled=not (has_key and files)):
-            run_grading([(f.name, f.getvalue()) for f in files])
-            st.success(f"ตรวจเสร็จ {len(files)} แผ่น", icon=":material/check_circle:")
+        label = f"เริ่มตรวจ {len(items)} แผ่น" if items else "เริ่มตรวจ"
+        if st.button(label, icon=":material/play_arrow:", type="primary", disabled=not (has_key and items)):
+            run_grading(items)
+            if mode == CAMERA:
+                st.session_state.captures = []  # ตรวจแล้ว เริ่มถ่ายชุดใหม่ได้เลย
+            st.success(f"ตรวจเสร็จ {len(items)} แผ่น", icon=":material/check_circle:")
         if st.session_state.results:
             if st.button("ดูผลที่หน้าหลัก", icon=":material/arrow_forward:"):
                 go("dashboard")
@@ -43,6 +48,52 @@ def render() -> None:
             go("dashboard")
         if C.PUBLIC_MODE:
             st.caption(":material/lock: ภาพที่อัปโหลดใช้ตรวจในหน่วยความจำเท่านั้น ไม่ถูกเก็บไว้บนเซิร์ฟเวอร์")
+
+
+UPLOAD = ":material/upload_file: อัปโหลดไฟล์"
+CAMERA = ":material/photo_camera: ถ่ายด้วยกล้อง"
+
+
+def upload_items() -> list[tuple[str, bytes]]:
+    # HEIC จาก iPhone เปิดได้เมื่อติดตั้ง pillow-heif เท่านั้น จึงไม่โชว์ถ้าเครื่องนี้ยังไม่มี
+    types = ["jpg", "jpeg", "png"] + (["heic", "heif"] if heic_supported() else [])
+    files = st.file_uploader(f"เลือกภาพ ({' / '.join(t.upper() for t in types)}) ได้หลายไฟล์", type=types,
+                             accept_multiple_files=True)
+    st.caption("บนมือถือ กดปุ่มนี้แล้วเลือก \"ถ่ายรูป\" ได้เลย จะได้ภาพความละเอียดเต็มของกล้อง")
+    return [(f.name, f.getvalue()) for f in files or []]
+
+
+def _keep_capture() -> None:
+    """เก็บภาพที่เพิ่งถ่ายไว้ในรายการ — camera_input ถือได้ทีละภาพ จึงต้องสะสมเองเพื่อถ่ายหลายแผ่น"""
+    shot = st.session_state.get("camera_shot")
+    if shot is None:  # ผู้ใช้กด "Clear photo" เพื่อถ่ายแผ่นถัดไป
+        return
+    data = shot.getvalue()
+    digest = hashlib.sha1(data).hexdigest()
+    if any(d == digest for _, _, d in st.session_state.captures):
+        return
+    name = f"กล้อง_{datetime.now():%H%M%S}_{len(st.session_state.captures) + 1:02d}.jpg"
+    st.session_state.captures.append((name, data, digest))
+
+
+def camera_items() -> list[tuple[str, bytes]]:
+    """ถ่ายทีละแผ่นด้วยกล้องของเครื่อง แล้วสะสมไว้จนกดเริ่มตรวจ"""
+    st.camera_input("ถ่ายกระดาษคำตอบให้เห็นสี่เหลี่ยมดำครบทั้ง 4 มุม", key="camera_shot", resolution="1080p",
+                    on_change=_keep_capture)
+    captures = st.session_state.captures
+    if captures:
+        row = st.container(horizontal=True, vertical_alignment="center", gap="small")
+        row.markdown(f"**ถ่ายแล้ว {len(captures)} แผ่น** — กด Clear photo แล้วถ่ายแผ่นถัดไปได้เลย")
+        if row.button("ลบแผ่นล่าสุด", icon=":material/undo:"):
+            captures.pop()
+            st.rerun()
+        if row.button("ล้างทั้งหมด", icon=":material/delete_sweep:"):
+            captures.clear()
+            st.rerun()
+        st.image([data for _, data, _ in captures], width=90, caption=[f"แผ่น {i + 1}" for i in range(len(captures))])
+    st.caption("กล้องใช้ได้เมื่อเปิดเว็บผ่าน localhost หรือ https:// เท่านั้น (เบราว์เซอร์บล็อกกล้องบน http ธรรมดา) "
+               "และเบราว์เซอร์จะถามสิทธิ์ใช้กล้องครั้งแรก — กด \"อนุญาต\"")
+    return [(name, data) for name, data, _ in captures]
 
 
 def key_editor() -> None:
