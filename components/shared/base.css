@@ -104,3 +104,20 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {animation: none !important; transition: none !important;}
 }
+
+/* ปุ่มเปิด/ปิดเมนูด้านข้าง: เปลี่ยนลูกศร » / « ของ Streamlit เป็นไอคอน 3 ขีด (☰)
+   วาดด้วย CSS ล้วน ไม่พึ่งฟอนต์ไอคอน — ซ่อนไอคอนเดิมแล้ววาด 3 เส้นแทนที่ตำแหน่งเดียวกัน */
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"] {
+  font-size: 0 !important; width: 22px; height: 16px; position: relative; display: inline-block;
+}
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"]::before,
+[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"]::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(currentColor 0 0) top / 100% 2.5px no-repeat,
+              linear-gradient(currentColor 0 0) center / 100% 2.5px no-repeat,
+              linear-gradient(currentColor 0 0) bottom / 100% 2.5px no-repeat;
+  border-radius: 2px;
+}
+[data-testid="stExpandSidebarButton"] { color: #33445f; }
+[data-testid="stExpandSidebarButton"]:hover { color: #1d4ed8; }
