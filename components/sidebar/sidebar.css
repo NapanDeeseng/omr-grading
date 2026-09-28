@@ -1,33 +1,67 @@
-/* เมนู sidebar (st.page_link) — สีพื้นอยู่ใน .streamlit/config.toml [theme.sidebar] */
-.st-key-side_menu {gap: 2px;}
-.st-key-side_menu a[data-testid="stPageLink-NavLink"] {padding: 10px 14px; border-radius: 10px;
-  transition: background .15s; background: transparent;}
-.st-key-side_menu a[data-testid="stPageLink-NavLink"]:hover {background: #f1f5fc;}
-.st-key-side_menu a[data-testid="stPageLink-NavLink"] p {font-size: 1rem; color: #33445f;}
-.st-key-side_menu a[data-testid="stPageLink-NavLink"] span[data-testid="stIconMaterial"] {color: #7a8aa3;}
+/* เมนู sidebar — สีพื้นอยู่ใน .streamlit/config.toml [theme.sidebar]
+   โทนเดียวกับ base.css: น้ำเงิน #1d4ed8, ตัวอักษรเข้ม #0f1f3d, เทาอ่อน #f5f8fd */
+
+[data-testid="stSidebarContent"] {position: relative;}
+[data-testid="stSidebarUserContent"] {padding-top: 12px;}
+
+/* ---------------------------------------------------------------------------
+   ปุ่มปิดเมนู (☰) — อยู่แถวเดียวกับโลโก้ และแสดงตลอดเวลา
+   Streamlit ตั้ง visibility: hidden ไว้ ปุ่มจึงติด ๆ ดับ ๆ ตามการชี้เมาส์ จึงบังคับให้เห็นตลอด
+   --------------------------------------------------------------------------- */
+[data-testid="stSidebarHeader"] {position: absolute; top: 0; right: 0; left: auto; width: auto; height: auto;
+  padding: 22px 12px 0 0; z-index: 5;}
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapseButton"] * {visibility: visible !important; opacity: 1 !important;}
+[data-testid="stSidebarCollapseButton"] button {border-radius: 10px; padding: 6px; transition: background .15s, color .15s;}
+[data-testid="stSidebarCollapseButton"] button:hover {background: #eef3fb;}
+
+/* ---------------------------------------------------------------------------
+   โลโก้และชื่อระบบ
+   --------------------------------------------------------------------------- */
+.side-brand {display: flex; align-items: center; gap: 11px; padding: 2px 44px 14px 2px;
+  border-bottom: 1px solid #e9eef7; margin-bottom: 16px;}
+.side-brand .logo {width: 40px; height: 40px; border-radius: 13px; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, .28);
+  display: flex; align-items: center; justify-content: center;}
+.side-brand .name {min-width: 0; white-space: nowrap; font-size: 1.02rem; font-weight: 700; color: #0f1f3d;
+  line-height: 1.25; letter-spacing: -.01em;}
+.side-brand .name small {display: block; overflow: hidden; text-overflow: ellipsis; font-size: .74rem;
+  font-weight: 400; color: #7a8aa3; margin-top: 1px; letter-spacing: 0;}
+
+/* หัวข้อกลุ่ม (เมนู / สถานะ) */
+.side-label {font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: #a3b0c2; padding: 0 8px 8px;}
+
+/* ---------------------------------------------------------------------------
+   รายการเมนู (st.page_link)
+   --------------------------------------------------------------------------- */
+.st-key-side_menu {gap: 3px;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"] {position: relative; padding: 11px 14px; border-radius: 11px;
+  background: transparent; transition: background .16s ease, transform .16s ease;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"]:hover {background: #f1f5fc; transform: translateX(2px);}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"] p {font-size: .97rem; font-weight: 500; color: #435473;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"] span[data-testid="stIconMaterial"] {color: #8e9cb3;
+  transition: color .16s ease;}
+.st-key-side_menu a[data-testid="stPageLink-NavLink"]:hover span[data-testid="stIconMaterial"] {color: #1d4ed8;}
+
 /* หน้าที่เปิดอยู่: sidebar.render ครอบด้วย st.container(key="side_active") */
 .st-key-side_active a[data-testid="stPageLink-NavLink"],
-.st-key-side_active a[data-testid="stPageLink-NavLink"]:hover {background: #e8effd;
-  box-shadow: inset 3px 0 0 #1d4ed8;}
+.st-key-side_active a[data-testid="stPageLink-NavLink"]:hover {
+  background: linear-gradient(90deg, #e6edfd 0%, #f2f6fe 100%); transform: none;
+  box-shadow: inset 3px 0 0 #1d4ed8, 0 1px 2px rgba(15, 31, 61, .05);}
 .st-key-side_active a[data-testid="stPageLink-NavLink"] p {color: #1d4ed8; font-weight: 600;}
 .st-key-side_active a[data-testid="stPageLink-NavLink"] span[data-testid="stIconMaterial"] {color: #1d4ed8;}
 
-/* ปุ่มปิดเมนู (☰ ของ Streamlit) ให้อยู่แถวเดียวกับโลโก้และชื่อระบบ
-   ปกติ Streamlit วางปุ่มไว้ในแถวของมันเองเหนือเนื้อหา จึงดึงมาทับมุมขวาบนแล้วเว้นที่ให้ด้วย padding ของ .side-brand */
-[data-testid="stSidebarContent"] {position: relative;}
-[data-testid="stSidebarHeader"] {position: absolute; top: 0; right: 0; left: auto; width: auto; height: auto;
-  padding: 28px 14px 0 0; z-index: 5;}
-[data-testid="stSidebarUserContent"] {padding-top: 14px;}
+/* ---------------------------------------------------------------------------
+   สรุปสถานะด้านล่างเมนู
+   --------------------------------------------------------------------------- */
+.side-stat {display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 10px 13px; border-radius: 11px; background: #f7f9fd; border: 1px solid #e9eef7;
+  margin-bottom: 7px; font-size: .88rem; color: #52627a;}
+.side-stat b {color: #1d4ed8; font-size: .95rem; font-variant-numeric: tabular-nums; white-space: nowrap;}
 
-/* โลโก้และชื่อระบบ */
-.side-brand {display: flex; align-items: center; gap: 10px; padding: 2px 46px 18px 2px;}
-.side-brand .logo {width: 40px; height: 40px; border-radius: 12px; background: #1d4ed8; color: #fff;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
-.side-brand .name {min-width: 0; white-space: nowrap; font-size: 1.05rem; font-weight: 700; color: #0f1f3d; line-height: 1.2;}
-.side-brand .name small {display: block; overflow: hidden; text-overflow: ellipsis; font-size: .75rem; font-weight: 400; color: #52627a; margin-top: 2px;}
-.side-label {font-size: .75rem; font-weight: 600; letter-spacing: .06em; color: #8a99b0; padding: 0 6px 6px;}
-
-/* สรุปสถานะด้านล่างเมนู */
-.side-stat {display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
-  border-radius: 10px; background: #f5f8fd; margin-bottom: 6px; font-size: .9rem; color: #33445f;}
-.side-stat b {color: #1d4ed8; font-variant-numeric: tabular-nums;}
+/* เลขเวอร์ชันท้ายเมนู */
+[data-testid="stSidebarUserContent"] [data-testid="stCaptionContainer"] {margin-top: 14px; padding: 10px 8px 0;
+  border-top: 1px solid #e9eef7;}
+[data-testid="stSidebarUserContent"] [data-testid="stCaptionContainer"] p {font-size: .74rem; color: #a3b0c2;}

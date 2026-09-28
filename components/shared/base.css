@@ -121,3 +121,11 @@
 }
 [data-testid="stExpandSidebarButton"] { color: #33445f; }
 [data-testid="stExpandSidebarButton"]:hover { color: #1d4ed8; }
+
+
+/* กล่องอัปโหลดไฟล์: ซ่อนบรรทัดขนาดไฟล์ภาษาอังกฤษของ Streamlit (เราเขียนคำอธิบายไทยไว้เหนือกล่องแล้ว)
+   และทำกรอบประให้ดูเป็นพื้นที่วางไฟล์ */
+[data-testid="stFileUploaderDropzoneInstructions"] span {display: none;}
+[data-testid="stFileUploaderDropzone"] {background: #f7f9fd; border: 1.5px dashed #cdd9ec; border-radius: 12px;
+  transition: border-color .15s, background .15s;}
+[data-testid="stFileUploaderDropzone"]:hover {border-color: #1d4ed8; background: #f1f5fc;}

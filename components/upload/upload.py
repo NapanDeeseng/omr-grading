@@ -50,6 +50,7 @@ def render() -> None:
             st.caption(":material/lock: ภาพที่อัปโหลดใช้ตรวจในหน่วยความจำเท่านั้น ไม่ถูกเก็บไว้บนเซิร์ฟเวอร์")
 
 
+NO_ANSWER = "—"  # แสดงในตารางเฉลยเมื่อยังไม่กำหนดข้อนั้น (Streamlit แสดงช่องว่างของ dropdown เป็นคำว่า "None")
 UPLOAD = ":material/upload_file: อัปโหลดไฟล์"
 CAMERA = ":material/photo_camera: ถ่ายด้วยกล้อง"
 
@@ -117,13 +118,13 @@ def key_editor() -> None:
     key: AnswerKey = st.session_state.answer_key
     df = pd.DataFrame({
         "ข้อ": list(range(1, C.NUM_QUESTIONS + 1)),
-        "เฉลย": [key.get(q, None) for q in range(1, C.NUM_QUESTIONS + 1)],
+        "เฉลย": [key.get(q, NO_ANSWER) for q in range(1, C.NUM_QUESTIONS + 1)],
     })
     edited = st.data_editor(
         df, hide_index=True, width="stretch", height=280, key="key_editor_table",
         column_config={
             "ข้อ": st.column_config.NumberColumn(disabled=True),
-            "เฉลย": st.column_config.SelectboxColumn(options=list(C.CHOICES)),
+            "เฉลย": st.column_config.SelectboxColumn(options=[NO_ANSWER, *C.CHOICES], required=True),
         },
     )
     new_key = {int(r["ข้อ"]): str(r["เฉลย"]) for _, r in edited.iterrows() if r["เฉลย"] in C.CHOICES}
