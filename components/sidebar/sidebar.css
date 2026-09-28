@@ -12,12 +12,19 @@
 .st-key-side_active a[data-testid="stPageLink-NavLink"] p {color: #1d4ed8; font-weight: 600;}
 .st-key-side_active a[data-testid="stPageLink-NavLink"] span[data-testid="stIconMaterial"] {color: #1d4ed8;}
 
+/* ปุ่มปิดเมนู (☰ ของ Streamlit) ให้อยู่แถวเดียวกับโลโก้และชื่อระบบ
+   ปกติ Streamlit วางปุ่มไว้ในแถวของมันเองเหนือเนื้อหา จึงดึงมาทับมุมขวาบนแล้วเว้นที่ให้ด้วย padding ของ .side-brand */
+[data-testid="stSidebarContent"] {position: relative;}
+[data-testid="stSidebarHeader"] {position: absolute; top: 0; right: 0; left: auto; width: auto; height: auto;
+  padding: 28px 14px 0 0; z-index: 5;}
+[data-testid="stSidebarUserContent"] {padding-top: 14px;}
+
 /* โลโก้และชื่อระบบ */
-.side-brand {display: flex; align-items: center; gap: 12px; padding: 2px 4px 18px;}
-.side-brand .logo {width: 44px; height: 44px; border-radius: 12px; background: #1d4ed8; color: #fff;
+.side-brand {display: flex; align-items: center; gap: 10px; padding: 2px 46px 18px 2px;}
+.side-brand .logo {width: 40px; height: 40px; border-radius: 12px; background: #1d4ed8; color: #fff;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
-.side-brand .name {font-size: 1.15rem; font-weight: 700; color: #0f1f3d; line-height: 1.2;}
-.side-brand .name small {display: block; font-size: .8rem; font-weight: 400; color: #52627a; margin-top: 2px;}
+.side-brand .name {min-width: 0; white-space: nowrap; font-size: 1.05rem; font-weight: 700; color: #0f1f3d; line-height: 1.2;}
+.side-brand .name small {display: block; overflow: hidden; text-overflow: ellipsis; font-size: .75rem; font-weight: 400; color: #52627a; margin-top: 2px;}
 .side-label {font-size: .75rem; font-weight: 600; letter-spacing: .06em; color: #8a99b0; padding: 0 6px 6px;}
 
 /* สรุปสถานะด้านล่างเมนู */

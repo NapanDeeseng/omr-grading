@@ -16,7 +16,7 @@ def render(pages: list[st.Page], current: st.Page) -> None:
     load_css(Path(__file__).with_name("sidebar.css"))
     with st.sidebar:
         st.markdown(f'<div class="side-brand"><div class="logo">{icons.svg("logo", 26)}</div>'
-                    '<div class="name">ระบบตรวจข้อสอบ<small>ตรวจกระดาษคำตอบจากภาพถ่าย</small></div></div>',
+                    '<div class="name">ระบบตรวจข้อสอบ<small>ตรวจจากภาพถ่าย</small></div></div>',
                     unsafe_allow_html=True)
         st.markdown('<div class="side-label">เมนู</div>', unsafe_allow_html=True)
         with st.container(key="side_menu"):
