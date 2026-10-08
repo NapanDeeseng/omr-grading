@@ -324,6 +324,15 @@ YOLOv8n (validation 50 ภาพ): mAP50 **0.994**, mAP50-95 0.950 — multi_mar
 3. ไปที่ **Settings → Variables and secrets** → เพิ่มตัวแปร `OMR_PUBLIC` = `1`
 4. รอ build ประมาณ 5–10 นาที แล้วแชร์ลิงก์ได้เลย
 
+**ทางเลือก: Streamlit Community Cloud (ฟรี ดึงจาก GitHub โดยตรง)**
+
+1. เข้า https://share.streamlit.io แล้วล็อกอินด้วย GitHub → **Create app** → **Deploy a public app from GitHub**
+2. Repository `NapanDeeseng/omr-grading` · Branch `main` · Main file path `app.py`
+3. **Advanced settings** → Python 3.12 → ช่อง Secrets ใส่ `OMR_PUBLIC = "1"` แล้วกด **Deploy**
+4. ถ้า repo เป็น Private ให้ไปที่ **Share** ของแอป แล้วตั้งให้ทุกคนที่มีลิงก์เปิดได้
+
+`requirements.txt` ดึง torch รุ่น CPU และ `packages.txt` ติดตั้ง `libgl1` ที่ OpenCV ของ ultralytics ต้องใช้
+
 **โหมดสาธารณะ (`OMR_PUBLIC=1`) เปลี่ยนอะไรบ้าง**
 
 | เรื่อง | ปกติ (ในเครื่อง) | โหมดสาธารณะ |

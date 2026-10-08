@@ -1,3 +1,6 @@
+# ดึง torch รุ่น CPU (ไม่มีไลบรารี CUDA ~2 GB) — เซิร์ฟเวอร์ฟรีอย่าง Streamlit Community Cloud ไม่มี GPU
+# และพื้นที่/RAM จำกัด รุ่น GPU จะทำให้ build ล้มหรือช้ามาก
+--extra-index-url https://download.pytorch.org/whl/cpu
 # headless = ตัวเดียวกันแต่ไม่มีหน้าต่าง GUI (โปรเจกต์ไม่ได้ใช้ cv2.imshow)
 # จึงติดตั้งบนเซิร์ฟเวอร์ Linux ตอน deploy ได้โดยไม่ติด error libGL.so.1
 opencv-python-headless>=4.8
