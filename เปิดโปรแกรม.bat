@@ -6,6 +6,11 @@ title OMR Grading
 
 if not exist ".venv\Scripts\python.exe" goto notready
 
+REM A .venv copied from another computer still points at that computer's
+REM Python, so check that it actually runs before trying to start the app.
+".venv\Scripts\python.exe" -c "import streamlit" >nul 2>&1
+if errorlevel 1 goto notready
+
 type "tools\msg\run_start.txt"
 echo.
 ".venv\Scripts\python.exe" -m streamlit run app.py

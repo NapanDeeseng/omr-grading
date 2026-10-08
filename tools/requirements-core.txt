@@ -1,0 +1,15 @@
+# ชุดขั้นต่ำที่ไม่มี ultralytics/YOLO — ติดตั้ง.bat ใช้ไฟล์นี้สำรองเมื่อ ultralytics ลงไม่ได้
+# (เช่น Python รุ่นใหม่มากที่ torch ยังไม่มีตัวติดตั้ง) ระบบยังตรวจข้อสอบได้ครบ เพียงข้ามขั้น YOLO
+# headless = ตัวเดียวกันแต่ไม่มีหน้าต่าง GUI (โปรเจกต์ไม่ได้ใช้ cv2.imshow)
+# จึงติดตั้งบนเซิร์ฟเวอร์ Linux ตอน deploy ได้โดยไม่ติด error libGL.so.1
+opencv-python-headless>=4.8
+numpy>=1.26
+imutils>=0.5.4
+scikit-image>=0.22
+scipy>=1.11
+pillow-heif>=0.16   # เปิดภาพ HEIC/HEIF จาก iPhone
+pandas>=2.0
+openpyxl>=3.1
+streamlit>=1.59      # โค้ดใช้ st.space / st.container(horizontal=True) ของรุ่นใหม่
+reportlab>=4.0
+pytest>=8.0         # ใช้ตอนพัฒนาเท่านั้น (ไม่จำเป็นสำหรับผู้ใช้ทั่วไป)
