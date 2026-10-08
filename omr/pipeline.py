@@ -17,7 +17,7 @@ from omr import detector, preprocess, quality, reader
 from omr.annotate import annotate
 from omr.errors import ImageLoadError, MarkerNotFoundError, OMRError, PaperNotFoundError
 from omr.grader import AnswerKey, grade, manual_read
-from omr.models import STATUS_OK, ReadResult, SheetResult
+from omr.models import STATUS_FAINT, STATUS_MULTI, STATUS_OK, ReadResult, SheetResult
 
 log = logging.getLogger(__name__)
 
@@ -182,6 +182,26 @@ def grade_image(
         result.error = f"เกิดข้อผิดพลาดระหว่างประมวลผลภาพ: {exc}"
     result.processing_ms = round((time.perf_counter() - start) * 1000.0, 1)
     return result
+
+
+def read_key_image(
+    source: bytes | str | Path,
+    filename: str = "",
+    thresholds: C.Thresholds | None = None,
+) -> tuple[AnswerKey, list[int]]:
+    """อ่านเฉลยจากภาพกระดาษคำตอบที่ครูฝนเฉลยไว้ คืน (เฉลย, ข้อที่ควรตรวจทาน) — raise OMRError ถ้าอ่านภาพไม่ได้
+
+    ข้อว่าง = ไม่ใช้ข้อนั้น, ข้อที่ฝนหลายช่องไม่ใส่ในเฉลย, ข้อที่ฝนจาง/ไม่มั่นใจใส่ไว้แต่ให้ครูตรวจทาน
+    """
+    th = thresholds or C.Thresholds()
+    warped, _ = align_sheet(load_image(source, filename))
+    warped, _ = preprocess.fix_orientation(warped)
+    reads = reader.read_answers(preprocess.binarize(warped), C.NUM_QUESTIONS, th)
+    key = {q: r.answer for q, r in reads.items() if r.status in (STATUS_OK, STATUS_FAINT)}
+    review = sorted(q for q, r in reads.items() if r.status == STATUS_MULTI or (q in key and r.uncertain))
+    if not key:
+        raise OMRError("ไม่พบข้อที่ฝนไว้ในภาพ — ฝนเฉลยลงกระดาษคำตอบให้เข้มเต็มวง แล้วถ่ายให้เห็นสี่เหลี่ยมดำครบ 4 มุม")
+    return key, review
 
 
 def regrade(result: SheetResult, answer_key: AnswerKey, thresholds: C.Thresholds | None = None) -> SheetResult:

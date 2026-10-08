@@ -10,7 +10,9 @@ import pytest
 import synth
 from conftest import encode_jpg, place_on_background
 from omr import config as C
-from omr.pipeline import apply_exif_orientation, apply_review, grade_image, read_exif_orientation, regrade
+from omr.errors import OMRError
+from omr.pipeline import (apply_exif_orientation, apply_review, grade_image, read_exif_orientation, read_key_image,
+                          regrade)
 
 KEY = {q: C.CHOICES[(q * 7) % len(C.CHOICES)] for q in range(1, C.NUM_QUESTIONS + 1)}
 
@@ -123,3 +125,16 @@ def test_heic_photo_is_graded(blank_sheet) -> None:
     assert from_heic.error is None
     assert from_heic.student_id == from_jpg.student_id
     assert [q.answer for q in from_heic.questions] == [q.answer for q in from_jpg.questions]
+
+
+def test_read_key_image(synthetic_sheets: list[tuple[bytes, str, dict[int, str]]]) -> None:
+    data, _, answers = synthetic_sheets[0]
+    key, review = read_key_image(data, "key.jpg")
+    assert key == {q: a for q, a in answers.items() if len(a) == 1}
+    assert all(q in review for q, a in answers.items() if len(a) > 1)
+
+
+def test_read_key_image_blank_sheet(blank_sheet: np.ndarray) -> None:
+    img, _ = place_on_background(blank_sheet, 3)
+    with pytest.raises(OMRError):
+        read_key_image(encode_jpg(img), "blank.jpg")

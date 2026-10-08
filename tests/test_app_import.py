@@ -302,3 +302,17 @@ def test_pages_survive_session_started_before_update(monkeypatch) -> None:
     for name in PAGE_NAMES:
         at.switch_page(page_file(name)).run()
         assert not at.exception, f"หน้า {name}: {at.exception}"
+
+
+def test_upload_page_key_photo_modes() -> None:
+    from streamlit.testing.v1 import AppTest
+
+    from components.upload import upload
+
+    # ขั้นที่ 1 เลือกถ่าย/อัปโหลดภาพกระดาษเฉลยแทนไฟล์ CSV ได้
+    for mode in (upload.KEY_IMAGE, upload.KEY_CAMERA):
+        at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+        at.session_state["key_source"] = mode
+        at.run()
+        at.switch_page(page_file("upload")).run()
+        assert not at.exception, f"{mode}: {at.exception}"

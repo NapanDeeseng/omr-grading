@@ -10,11 +10,11 @@ import streamlit as st
 
 from components.shared import widgets as W
 from components.shared.pages import go
-from components.shared.state import load_example_key, run_demo, run_grading
+from components.shared.state import load_example_key, run_demo, run_grading, thresholds
 from omr import config as C
-from omr.errors import AnswerKeyError
+from omr.errors import AnswerKeyError, OMRError
 from omr.grader import AnswerKey, answer_key_to_csv, parse_answer_key
-from omr.pipeline import heic_supported
+from omr.pipeline import heic_supported, read_key_image
 
 
 def render() -> None:
@@ -53,11 +53,18 @@ def render() -> None:
 NO_ANSWER = "—"  # แสดงในตารางเฉลยเมื่อยังไม่กำหนดข้อนั้น (Streamlit แสดงช่องว่างของ dropdown เป็นคำว่า "None")
 UPLOAD = ":material/upload_file: อัปโหลดไฟล์"
 CAMERA = ":material/photo_camera: ถ่ายด้วยกล้อง"
+KEY_CSV = ":material/upload_file: ไฟล์ CSV"
+KEY_IMAGE = ":material/image: ภาพกระดาษเฉลย"
+KEY_CAMERA = ":material/photo_camera: ถ่ายด้วยกล้อง"
+
+
+def image_types() -> list[str]:
+    # HEIC จาก iPhone เปิดได้เมื่อติดตั้ง pillow-heif เท่านั้น จึงไม่โชว์ถ้าเครื่องนี้ยังไม่มี
+    return ["jpg", "jpeg", "png"] + (["heic", "heif"] if heic_supported() else [])
 
 
 def upload_items() -> list[tuple[str, bytes]]:
-    # HEIC จาก iPhone เปิดได้เมื่อติดตั้ง pillow-heif เท่านั้น จึงไม่โชว์ถ้าเครื่องนี้ยังไม่มี
-    types = ["jpg", "jpeg", "png"] + (["heic", "heif"] if heic_supported() else [])
+    types = image_types()
     files = st.file_uploader(f"เลือกภาพ ({' / '.join(t.upper() for t in types)}) ได้หลายไฟล์", type=types,
                              accept_multiple_files=True)
     st.caption("บนมือถือ กดปุ่มนี้แล้วเลือก \"ถ่ายรูป\" ได้เลย จะได้ภาพความละเอียดเต็มของกล้อง")
@@ -97,19 +104,66 @@ def camera_items() -> list[tuple[str, bytes]]:
     return [(name, data) for name, data, _ in captures]
 
 
-def key_editor() -> None:
-    """ขั้นที่ 1: เฉลย (อัปโหลด CSV / โหลดตัวอย่าง / กรอกในตาราง)"""
-    W.card_title("ขั้นที่ 1 · กำหนดเฉลย", "key")
+def key_from_csv() -> None:
     up = st.file_uploader("อัปโหลดไฟล์เฉลย CSV (คอลัมน์ question,answer)", type=["csv"], key="key_upload")
-    # แถวแนวนอน: ปุ่มกว้างตามข้อความ (ไม่ถูกตัด) ข้อความสรุปใช้พื้นที่ที่เหลือ
-    row = st.container(horizontal=True, vertical_alignment="center", gap="medium")
     if up is not None and st.session_state.get("key_upload_name") != up.name:
         try:
             st.session_state.answer_key = parse_answer_key(up.getvalue())
             st.session_state.key_upload_name = up.name
+            st.session_state.pop("key_editor_table", None)  # ไม่งั้นค่าที่เคยแก้ในตารางจะทับเฉลยใหม่
             st.success(f"โหลดเฉลย {len(st.session_state.answer_key)} ข้อ", icon=":material/check_circle:")
         except AnswerKeyError as exc:
             st.error(str(exc))
+
+
+def _read_key_photo(data: bytes, name: str) -> None:
+    """อ่านเฉลยจากภาพครั้งเดียวต่อภาพ — ทุกครั้งที่แตะตาราง Streamlit จะ rerun แต่ต้องไม่อ่านภาพเดิมซ้ำทับที่ครูแก้ไว้"""
+    digest = hashlib.sha1(data).hexdigest()
+    if st.session_state.get("key_photo_digest") == digest:
+        return
+    st.session_state.key_photo_digest = digest
+    try:
+        key, review = read_key_image(data, name, thresholds())
+    except OMRError as exc:
+        st.session_state.key_photo_note = ("error", str(exc))
+        return
+    st.session_state.answer_key = key
+    st.session_state.pop("key_editor_table", None)
+    msg = f"อ่านเฉลยจากภาพได้ {len(key)} ข้อ"
+    if review:
+        msg += f" — ข้อ {', '.join(map(str, review))} ฝนหลายช่องหรือไม่ชัด กรุณาตรวจ/เลือกเฉลยในตารางด้านล่าง"
+    st.session_state.key_photo_note = ("warning" if review else "success", msg)
+
+
+def key_from_photo(mode: str) -> None:
+    """ฝนเฉลยลงกระดาษคำตอบเปล่าหนึ่งแผ่น แล้วถ่าย/อัปโหลดภาพให้ระบบอ่านเป็นเฉลย"""
+    if mode == KEY_CAMERA:
+        shot = st.camera_input("ถ่ายกระดาษเฉลยให้เห็นสี่เหลี่ยมดำครบทั้ง 4 มุม", key="key_camera", resolution="1080p")
+        if shot is not None:
+            _read_key_photo(shot.getvalue(), "เฉลย.jpg")
+    else:
+        up = st.file_uploader("เลือกภาพกระดาษคำตอบที่ฝนเฉลยไว้", type=image_types(), key="key_photo")
+        st.caption("บนมือถือ กดปุ่มนี้แล้วเลือก \"ถ่ายรูป\" ได้เลย")
+        if up is not None:
+            _read_key_photo(up.getvalue(), up.name)
+    note = st.session_state.get("key_photo_note")
+    if note:
+        kind, msg = note
+        icon = {"error": ":material/error:", "warning": ":material/warning:"}.get(kind, ":material/check_circle:")
+        getattr(st, kind)(msg, icon=icon)
+
+
+def key_editor() -> None:
+    """ขั้นที่ 1: เฉลย (อัปโหลด CSV / ถ่ายกระดาษเฉลย / โหลดตัวอย่าง / กรอกในตาราง)"""
+    W.card_title("ขั้นที่ 1 · กำหนดเฉลย", "key")
+    mode = st.segmented_control("วิธีกำหนดเฉลย", [KEY_CSV, KEY_IMAGE, KEY_CAMERA], default=KEY_CSV,
+                                key="key_source", label_visibility="collapsed") or KEY_CSV
+    if mode == KEY_CSV:
+        key_from_csv()
+    else:
+        key_from_photo(mode)
+    # แถวแนวนอน: ปุ่มกว้างตามข้อความ (ไม่ถูกตัด) ข้อความสรุปใช้พื้นที่ที่เหลือ
+    row = st.container(horizontal=True, vertical_alignment="center", gap="medium")
     if row.button("โหลดเฉลยตัวอย่าง", icon=":material/playlist_add:", width="content"):
         st.session_state.answer_key = load_example_key()
         st.session_state.pop("key_editor_table", None)
