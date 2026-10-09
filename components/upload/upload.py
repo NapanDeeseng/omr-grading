@@ -8,6 +8,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from components.shared import camera
 from components.shared import widgets as W
 from components.shared.pages import go
 from components.shared.state import load_example_key, run_demo, run_grading, thresholds
@@ -25,7 +26,8 @@ def render() -> None:
     with right, st.container(key="card_upload"):
         W.card_title("ขั้นที่ 2 · เพิ่มภาพกระดาษคำตอบ", "add_photo_alternate")
         mode = st.segmented_control("วิธีเพิ่มภาพ", [UPLOAD, CAMERA], default=UPLOAD, key="image_source",
-                                    label_visibility="collapsed") or UPLOAD
+                                    label_visibility="collapsed", on_change=_arm_camera,
+                                    args=("image_source", CAMERA, "camera_open")) or UPLOAD
         items = upload_items() if mode == UPLOAD else camera_items()
         has_key = bool(st.session_state.answer_key)
         if not has_key:
@@ -71,27 +73,32 @@ def upload_items() -> list[tuple[str, bytes]]:
     return [(f.name, f.getvalue()) for f in files or []]
 
 
-def _keep_capture() -> None:
-    """เก็บภาพที่เพิ่งถ่ายไว้ในรายการ — camera_input ถือได้ทีละภาพ จึงต้องสะสมเองเพื่อถ่ายหลายแผ่น"""
-    shot = st.session_state.get("camera_shot")
-    if shot is None:  # ผู้ใช้กด "Clear photo" เพื่อถ่ายแผ่นถัดไป
-        return
-    data = shot.getvalue()
+def _arm_camera(widget_key: str, camera_mode: str, token_key: str) -> None:
+    """เพิ่งเลือกโหมดกล้อง → ให้กล้องเปิดเต็มจอเองทันที ไม่ต้องกดปุ่มซ้ำ"""
+    if st.session_state.get(widget_key) == camera_mode:
+        camera.arm(token_key)
+
+
+def _keep_capture(data: bytes) -> None:
+    """เก็บภาพที่เพิ่งถ่ายไว้ในรายการ — กล้องส่งมาทีละภาพ (ครั้งเดียวต่อการกดถ่าย) จึงสะสมเองเพื่อตรวจหลายแผ่นพร้อมกัน"""
     digest = hashlib.sha1(data).hexdigest()
-    if any(d == digest for _, _, d in st.session_state.captures):
-        return
     name = f"กล้อง_{datetime.now():%H%M%S}_{len(st.session_state.captures) + 1:02d}.jpg"
     st.session_state.captures.append((name, data, digest))
 
 
 def camera_items() -> list[tuple[str, bytes]]:
-    """ถ่ายทีละแผ่นด้วยกล้องของเครื่อง แล้วสะสมไว้จนกดเริ่มตรวจ"""
-    st.camera_input("ถ่ายกระดาษคำตอบให้เห็นสี่เหลี่ยมดำครบทั้ง 4 มุม", key="camera_shot", resolution="1080p",
-                    on_change=_keep_capture)
+    """ถ่ายต่อเนื่องทีละแผ่นด้วยกล้องเต็มจอ แล้วสะสมไว้จนกดเริ่มตรวจ"""
+    shot = camera.scanner("sheet_scanner", title="สแกนกระดาษคำตอบ", multiple=True,
+                          hint="ให้สี่เหลี่ยมดำทั้ง 4 มุมอยู่ในกรอบ แล้วกดถ่าย",
+                          open_label="เปิดกล้องสแกน",
+                          open_hint="ถ่ายกระดาษคำตอบต่อกันได้หลายแผ่น",
+                          open_token=st.session_state.get("camera_open", 0))
+    if shot:
+        _keep_capture(shot)
     captures = st.session_state.captures
     if captures:
         row = st.container(horizontal=True, vertical_alignment="center", gap="small")
-        row.markdown(f"**ถ่ายแล้ว {len(captures)} แผ่น** — กด Clear photo แล้วถ่ายแผ่นถัดไปได้เลย")
+        row.markdown(f"**ถ่ายแล้ว {len(captures)} แผ่น**")
         if row.button("ลบแผ่นล่าสุด", icon=":material/undo:"):
             captures.pop()
             st.rerun()
@@ -138,9 +145,12 @@ def _read_key_photo(data: bytes, name: str) -> None:
 def key_from_photo(mode: str) -> None:
     """ฝนเฉลยลงกระดาษคำตอบเปล่าหนึ่งแผ่น แล้วถ่าย/อัปโหลดภาพให้ระบบอ่านเป็นเฉลย"""
     if mode == KEY_CAMERA:
-        shot = st.camera_input("ถ่ายกระดาษเฉลยให้เห็นสี่เหลี่ยมดำครบทั้ง 4 มุม", key="key_camera", resolution="1080p")
-        if shot is not None:
-            _read_key_photo(shot.getvalue(), "เฉลย.jpg")
+        shot = camera.scanner("key_scanner", title="สแกนกระดาษเฉลย", multiple=False,
+                              hint="ให้สี่เหลี่ยมดำทั้ง 4 มุมอยู่ในกรอบ แล้วกดถ่าย",
+                              open_label="เปิดกล้องสแกน", open_hint="ถ่ายกระดาษที่ฝนเฉลยไว้ 1 แผ่น",
+                              open_token=st.session_state.get("key_camera_open", 0))
+        if shot:
+            _read_key_photo(shot, "เฉลย.jpg")
     else:
         up = st.file_uploader("เลือกภาพกระดาษคำตอบที่ฝนเฉลยไว้", type=image_types(), key="key_photo")
         st.caption("บนมือถือ กดปุ่มนี้แล้วเลือก \"ถ่ายรูป\" ได้เลย")
@@ -157,7 +167,8 @@ def key_editor() -> None:
     """ขั้นที่ 1: เฉลย (อัปโหลด CSV / ถ่ายกระดาษเฉลย / โหลดตัวอย่าง / กรอกในตาราง)"""
     W.card_title("ขั้นที่ 1 · กำหนดเฉลย", "key")
     mode = st.segmented_control("วิธีกำหนดเฉลย", [KEY_CSV, KEY_IMAGE, KEY_CAMERA], default=KEY_CSV,
-                                key="key_source", label_visibility="collapsed") or KEY_CSV
+                                key="key_source", label_visibility="collapsed", on_change=_arm_camera,
+                                args=("key_source", KEY_CAMERA, "key_camera_open")) or KEY_CSV
     if mode == KEY_CSV:
         key_from_csv()
     else:
