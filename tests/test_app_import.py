@@ -237,7 +237,7 @@ def test_camera_mode_grades_captured_sheets(blank_sheet, tmp_path, monkeypatch) 
     at.session_state["answer_key"] = key
     at.session_state["image_source"] = upload.CAMERA
     at.run()
-    # AppTest ยังสั่งกล้องไม่ได้ จึงใส่ภาพที่ "ถ่ายแล้ว" ลงรายการตรง ๆ (รูปแบบเดียวกับ _keep_capture)
+    # AppTest สั่งกล้อง (JavaScript) ไม่ได้ จึงใส่ภาพที่ "ถ่ายแล้ว" ลงรายการตรง ๆ (รูปแบบเดียวกับ _keep_capture)
     at.session_state["captures"] = [(f"กล้อง_{i}.jpg", d, hashlib.sha1(d).hexdigest()) for i, d in enumerate(shots)]
     at.switch_page(page_file("upload")).run()
     assert not at.exception
@@ -316,3 +316,35 @@ def test_upload_page_key_photo_modes() -> None:
         at.run()
         at.switch_page(page_file("upload")).run()
         assert not at.exception, f"{mode}: {at.exception}"
+
+
+def test_camera_photo_decoding() -> None:
+    """ภาพจากกล้องเต็มจอส่งมาเป็น data URL — แปลงกลับเป็น bytes ได้ ค่าเสีย/ว่างคืน None"""
+    import base64
+
+    from components.shared.camera import decode_photo
+
+    jpg = b"\xff\xd8\xff\xe0fake-jpeg"
+    assert decode_photo("data:image/jpeg;base64," + base64.b64encode(jpg).decode()) == jpg
+    for bad in (None, "", "data:image/jpeg;base64,", "data:image/jpeg;base64,@@@", "data:text/plain;base64,aGk=",
+                "not a url", 123):
+        assert decode_photo(bad) is None, bad
+
+
+def test_camera_scanner_renders_and_arms(monkeypatch) -> None:
+    """เลือกโหมดกล้องแล้วหน้าวาดกล้องเต็มจอได้ และ on_change นับรอบให้กล้องเปิดเองครั้งเดียว"""
+    from streamlit.testing.v1 import AppTest
+
+    from components.upload import upload
+
+    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
+    at.run()
+    at.switch_page(page_file("upload")).run()
+    [sheet_mode] = [s for s in at.button_group if s.key == "image_source"]
+    sheet_mode.set_value(upload.CAMERA).run()
+    assert not at.exception
+    assert at.session_state["camera_open"] == 1
+    [key_mode] = [s for s in at.button_group if s.key == "key_source"]
+    key_mode.set_value(upload.KEY_CAMERA).run()
+    assert not at.exception
+    assert at.session_state["key_camera_open"] == 1 and at.session_state["camera_open"] == 1
